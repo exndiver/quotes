@@ -1,0 +1,9 @@
+version: "2"
+services:
+  mongo:
+    image: mongo:4.2.0-rc2
+    volumes:
+      - ./db:/data/db
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=root
+      - MONGO_INITDB_ROOT_PASSWORD=123456
