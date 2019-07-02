@@ -1,4 +1,4 @@
 # quotes
 
-go get -u github.com/gorilla/mux
-go get -u github.com/gorilla/handlers
+1. go get -u github.com/gorilla/mux
+2. go get -u github.com/gorilla/handlers
