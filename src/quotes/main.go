@@ -14,7 +14,7 @@ func main() {
 
 	r.HandleFunc("/", DefaultPage).Methods("GET")
 
-	r.HandleFunc("/GetAvialibleCurrencies/", avialibleCurrencies).Methods("GET")
+	r.HandleFunc("/api/GetAvialibleCurrencies/", avialibleCurrencies).Methods("GET")
 
 
 	fmt.Printf("Starting server for testing HTTP POST...\n")
