@@ -1,11 +1,10 @@
 package main
 
 import (
-//	"fmt"
-//	"io/ioutil"
 	"net/http"
+	"strconv"
 //	"encoding/json"
-//	"github.com/gorilla/mux"
+	"github.com/gorilla/mux"
 )
 
 func DefaultPage(w http.ResponseWriter, r *http.Request) {
@@ -17,4 +16,21 @@ func avialibleCurrencies(w http.ResponseWriter, r *http.Request){
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(responseAvialibleCurrencies())
+}
+
+func getRatesAPI(w http.ResponseWriter, r *http.Request){
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(getRates())
+}
+
+func getRatesBasedAPI(w http.ResponseWriter, r *http.Request){
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Content-Type", "application/json")
+	vars := mux.Vars(r)
+	groupID, err := strconv.Atoi(vars["groupID"])
+	if err != nil{
+		w.Write([]byte("OK! Nothing!\n"))
+	}
+	w.Write(getRatesBased(groupID, vars["symbol"]))
 }
