@@ -11,7 +11,7 @@ type Conf struct{
 	Service string
 	Mongodb string
 	AvialibleTypes string
-	AvialibleList CurrenciesType
+	AvialibleList map[string]string
 	Plugins Plugins
 	Cryptoapilist map[string]string
 }
