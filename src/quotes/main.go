@@ -24,8 +24,8 @@ var LastQuotesReload = time.Now()
 func reloadCurrenciesInMemory(){
 	getAllElementsinMemory()
 	LastQuotesReload = time.Now()
-	nextTime := time.Now().Truncate(time.Minute)
-	nextTime = nextTime.Add(time.Minute)
+	nextTime := time.Now().Truncate(time.Hour)
+	nextTime = nextTime.Add(time.Hour)
 	time.Sleep(time.Until(nextTime))
 	go reloadCurrenciesInMemory()
 }
@@ -35,8 +35,8 @@ func updateQuotesInDB(){
 		exchangeratesapi()
 	}
 	LastQuotesUpdate = time.Now()
-	nextTime := time.Now().Truncate(time.Minute)
-	nextTime = nextTime.Add(time.Minute)
+	nextTime := time.Now().Truncate(time.Hour * 12)
+	nextTime = nextTime.Add(time.Hour * 12)
 	time.Sleep(time.Until(nextTime))
 	go updateQuotesInDB()
 }
