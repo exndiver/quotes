@@ -8,23 +8,26 @@ import (
 )
 
 func DefaultPage(w http.ResponseWriter, r *http.Request) {
-//	Logger1(r)
+	Logger1(r)
 	w.Write([]byte("OK! Nothing!\n"))
 }
 
 func avialibleCurrencies(w http.ResponseWriter, r *http.Request){
+	Logger1(r)
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(responseAvialibleCurrencies())
 }
 
 func getRatesAPI(w http.ResponseWriter, r *http.Request){
+	Logger1(r)
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Content-Type", "application/json")
-	w.Write(getRates())
+	w.Write(getRatesFromCache())
 }
 
 func getRatesBasedAPI(w http.ResponseWriter, r *http.Request){
+	Logger1(r)
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Content-Type", "application/json")
 	vars := mux.Vars(r)
@@ -32,5 +35,5 @@ func getRatesBasedAPI(w http.ResponseWriter, r *http.Request){
 	if err != nil{
 		w.Write([]byte("OK! Nothing!\n"))
 	}
-	w.Write(getRatesBased(groupID, vars["symbol"]))
+	w.Write(getRatesBasedFromCache(groupID, vars["symbol"]))
 }

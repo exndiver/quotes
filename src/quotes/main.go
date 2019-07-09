@@ -6,7 +6,9 @@ import (
 	"net/http"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/handlers"
+	"time"
 )
+
 var Config = get_config()
 
 type Quote struct{
@@ -15,7 +17,36 @@ type Quote struct{
 	Category int `json:"category"`
 }
 
+var QutesinMemory []* Quote
+var LastQuotesUpdate = time.Now()
+var LastQuotesReload = time.Now()
+
+func reloadCurrenciesInMemory(){
+	getAllElementsinMemory()
+	LastQuotesReload = time.Now()
+	nextTime := time.Now().Truncate(time.Minute)
+	nextTime = nextTime.Add(time.Minute)
+	time.Sleep(time.Until(nextTime))
+	go reloadCurrenciesInMemory()
+}
+
+func updateQuotesInDB(){
+	if Config.Plugins.Exchangeratesapi {
+		exchangeratesapi()
+	}
+	LastQuotesUpdate = time.Now()
+	nextTime := time.Now().Truncate(time.Minute)
+	nextTime = nextTime.Add(time.Minute)
+	time.Sleep(time.Until(nextTime))
+	go updateQuotesInDB()
+}
+
 func main() {
+	
+	go reloadCurrenciesInMemory()
+
+	go updateQuotesInDB()
+
 	r := mux.NewRouter().StrictSlash(true)
 
 	r.HandleFunc("/", DefaultPage).Methods("GET")

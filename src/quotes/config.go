@@ -12,6 +12,7 @@ type Conf struct{
 	Mongodb string
 	AvialibleTypes string
 	AvialibleList CurrenciesType
+	Plugins Plugins
 }
 
 type Hosts struct{
@@ -21,6 +22,9 @@ type Hosts struct{
 
 type CurrenciesType struct{
 	Currencies string
+}
+type Plugins struct{
+	Exchangeratesapi bool
 }
 
 func get_config() Conf{
