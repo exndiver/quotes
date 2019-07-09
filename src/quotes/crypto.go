@@ -37,7 +37,7 @@ func getCrypto(){
 		}
 		var q = Quote {
 			Symbol: C.Ticker["base"],
-			Rate: s,
+			Rate: 1/s,
 			Category: 1,
 		}
 		if isElementInDB(q) {
