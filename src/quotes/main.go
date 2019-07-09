@@ -30,7 +30,7 @@ func reloadCurrenciesInMemory(){
 	go reloadCurrenciesInMemory()
 }
 
-func updateQuotesInDB(){
+func updateQuotesExchangeratesapiInDB(){
 	if Config.Plugins.Exchangeratesapi {
 		exchangeratesapi()
 	}
@@ -38,14 +38,27 @@ func updateQuotesInDB(){
 	nextTime := time.Now().Truncate(time.Hour * 12)
 	nextTime = nextTime.Add(time.Hour * 12)
 	time.Sleep(time.Until(nextTime))
-	go updateQuotesInDB()
+	go updateQuotesExchangeratesapiInDB()
+}
+
+func updateQuotesCryptocurrenciesInDB(){
+	if Config.Plugins.Crypto {
+		getCrypto()
+	}
+	LastQuotesUpdate = time.Now()
+	nextTime := time.Now().Truncate(time.Minute * 10)
+	nextTime = nextTime.Add(time.Minute * 10)
+	time.Sleep(time.Until(nextTime))
+	go updateQuotesCryptocurrenciesInDB()
 }
 
 func main() {
 	
 	go reloadCurrenciesInMemory()
 
-	go updateQuotesInDB()
+	go updateQuotesExchangeratesapiInDB()
+
+	go updateQuotesCryptocurrenciesInDB()
 
 	r := mux.NewRouter().StrictSlash(true)
 

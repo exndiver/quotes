@@ -13,12 +13,13 @@ type Response struct{
 
 
 func getRatesFromCache()[]byte{
-	
-	var currency = make (map[string]float64)
 	var response = make (map[string](map[string]float64))
-	for _, category := range strings.Split(Config.AvialibleTypes, ",") {
+	for index, category := range strings.Split(Config.AvialibleTypes, ",") {
+		var currency = make (map[string]float64)
 		for _, cur := range QutesinMemory{
-			currency[cur.Symbol] = cur.Rate		
+			if cur.Category == index{
+				currency[cur.Symbol] = cur.Rate
+			}
 		}
 		response[category] = currency
 	}
@@ -27,7 +28,6 @@ func getRatesFromCache()[]byte{
 }
 
 func getRatesBasedFromCache(groupID int, symbol string)[]byte{
-	var currency = make (map[string]float64)
 	var response = make (map[string](map[string]float64))
 
 	var delta = 1.0
@@ -41,6 +41,7 @@ func getRatesBasedFromCache(groupID int, symbol string)[]byte{
 		}
 	}
 	for index, category := range strings.Split(Config.AvialibleTypes, ",") {
+		var currency = make (map[string]float64)
 		for _, cur := range QutesinMemory{
 			if cur.Category == index{
 				var newRate = math.Round((cur.Rate*delta)*10000000000)/10000000000
@@ -49,8 +50,8 @@ func getRatesBasedFromCache(groupID int, symbol string)[]byte{
 				}
 				currency[cur.Symbol] = newRate
 			}
-			response[category] = currency
 		}
+		response[category] = currency
 	}
 	json_result, _ := json.Marshal(response)
 	return json_result

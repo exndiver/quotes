@@ -13,6 +13,7 @@ type Conf struct{
 	AvialibleTypes string
 	AvialibleList CurrenciesType
 	Plugins Plugins
+	Cryptoapilist map[string]string
 }
 
 type Hosts struct{
@@ -25,6 +26,7 @@ type CurrenciesType struct{
 }
 type Plugins struct{
 	Exchangeratesapi bool
+	Crypto bool
 }
 
 func get_config() Conf{
