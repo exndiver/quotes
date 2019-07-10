@@ -44,7 +44,7 @@ func getRatesBasedFromCache(groupID int, symbol string)[]byte{
 		var currency = make (map[string]float64)
 		for _, cur := range QutesinMemory{
 			if cur.Category == index{
-				var newRate = math.Round((cur.Rate*delta)*10000000)/10000000
+				var newRate = math.Round((cur.Rate*delta)*10000000000)/10000000000
 				if cur.Symbol == strings.ToUpper(symbol) {
 					newRate= 1.0
 				}

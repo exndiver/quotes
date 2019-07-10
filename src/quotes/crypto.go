@@ -21,7 +21,7 @@ func getCrypto(){
 		if err != nil {
 			Logger2Errors("Error calling crypto api for %s" + v)
 		}
-		Logger2("%s was loaded successfully" + v)
+		Logger2("Was loaded successfully " + v)
 		body,err := ioutil.ReadAll(resp.Body)
 		if err != nil{
 			Logger2Errors("Error getting responce body "+v)
