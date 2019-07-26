@@ -11,7 +11,7 @@ import (
 )
 
 // Config - main configuration from config.json file
-var Config = get_config()
+var Config = getConfig()
 
 // Quote - Struct for qoute
 type Quote struct {
@@ -25,8 +25,8 @@ var QutesinMemory []*Quote
 
 func reloadCurrenciesInMemory() {
 	getAllElementsinMemory()
-	nextTime := time.Now().Truncate(time.Hour)
-	nextTime = nextTime.Add(time.Hour)
+	nextTime := time.Now().Truncate(time.Minute * 10)
+	nextTime = nextTime.Add(time.Minute * 10)
 	time.Sleep(time.Until(nextTime))
 	go reloadCurrenciesInMemory()
 }
@@ -35,10 +35,20 @@ func updateQuotesExchangeratesapiInDB() {
 	if Config.Plugins.Exchangeratesapi {
 		exchangeratesapi()
 	}
-	nextTime := time.Now().Truncate(time.Hour * 12)
-	nextTime = nextTime.Add(time.Hour * 12)
+	nextTime := time.Now().Truncate(time.Hour * 2)
+	nextTime = nextTime.Add(time.Hour * 2)
 	time.Sleep(time.Until(nextTime))
 	go updateQuotesExchangeratesapiInDB()
+}
+
+func updateBLRDInDB() {
+	if Config.Plugins.Blrd {
+		blrdRub()
+	}
+	nextTime := time.Now().Truncate(time.Hour * 2)
+	nextTime = nextTime.Add(time.Hour * 2)
+	time.Sleep(time.Until(nextTime))
+	go updateBLRDInDB()
 }
 
 func updateQuotesCryptocurrenciesInDB() {
@@ -58,6 +68,8 @@ func main() {
 	go updateQuotesExchangeratesapiInDB()
 
 	go updateQuotesCryptocurrenciesInDB()
+
+	go updateBLRDInDB()
 
 	r := mux.NewRouter().StrictSlash(true)
 

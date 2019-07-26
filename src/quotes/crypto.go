@@ -2,16 +2,17 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"net/http"
 	"strconv"
 )
 
+// CrypResp - responce from crypto source
 type CrypResp struct {
 	Ticker Cryp `json:"ticker"`
 }
 
+// Cryp - ticker
 type Cryp map[string]string
 
 func getCrypto() {
@@ -30,7 +31,6 @@ func getCrypto() {
 		}
 		if err := json.Unmarshal(body, &C); err != nil {
 			Logger2Errors("Error parsing JSON for " + v)
-			fmt.Printf("%v\n", err)
 			return
 		}
 		var s, e = strconv.ParseFloat(C.Ticker["price"], 64)

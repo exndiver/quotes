@@ -2,9 +2,7 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
-	"log"
 	"net/http"
 )
 
@@ -27,10 +25,11 @@ func blrdRub() {
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		log.Fatalln(err)
+		Logger2Errors("Error ioutil.ReadAll for BLRD ")
+		return
 	}
 	if err := json.Unmarshal(body, &quotes); err != nil {
-		fmt.Printf("%+s\n", err)
+		Logger2Errors("Error parsing JSON for BLRD")
 		return
 	}
 	str := Quote{
