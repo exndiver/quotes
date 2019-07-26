@@ -8,3 +8,4 @@ logs.log
 request_logs.log
 request_logs.error.log
 src/quotes/quotes
+bin
