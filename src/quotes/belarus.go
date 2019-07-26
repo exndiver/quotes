@@ -35,7 +35,7 @@ func blrdRub() {
 	}
 	str := Quote{
 		Symbol:   "BYR",
-		Rate:     quotes,
+		Rate:     quotes.CurOfficialRate,
 		Category: 0,
 	}
 	if isElementInDB(str) {
