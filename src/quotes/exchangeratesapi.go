@@ -2,16 +2,16 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
-	"log"
 	"net/http"
 )
 
+// QuotesResponse - struct for requesting all quotes from api exch
 type QuotesResponse struct {
 	Rates Quotes `json:"rates"`
 }
 
+// Quotes struct for each cur from api exch
 type Quotes map[string]float64
 
 func exchangeratesapi() {
@@ -29,11 +29,11 @@ func exchangeratesapi() {
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		log.Fatalln(err)
+		Logger2Errors("Error parsing JSON api.exchangeratesapi.io ")
 		return
 	}
 	if err := json.Unmarshal(body, &quotes); err != nil {
-		fmt.Printf("%+s\n", err)
+		Logger2Errors("Error parsing JSON api.exchangeratesapi.io")
 		return
 	}
 	for k, v := range quotes.Rates {
