@@ -8,13 +8,13 @@ import (
 	"net/http"
 )
 
-// QuotesResponse - Responce from api with quotes
-type QuotesResponse struct {
+// QuotesBlrd - Responce from api with quotes
+type QuotesBlrd struct {
 	CurOfficialRate float64 `json:"Cur_OfficialRate"`
 }
 
 func blrdRub() {
-	var quotes QuotesResponse
+	var quotes QuotesBlrd
 	resp, err := http.Get("http://www.nbrb.by/API/ExRates/Rates/292?Periodicity=0")
 
 	if err != nil {
