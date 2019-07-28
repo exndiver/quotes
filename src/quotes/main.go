@@ -23,32 +23,36 @@ type Quote struct {
 // QutesinMemory - in memory cache of all quotes in db
 var QutesinMemory []*Quote
 
-func reloadCurrenciesInMemory() {
-	getAllElementsinMemory()
-	nextTime := time.Now().Truncate(time.Minute * 10)
-	nextTime = nextTime.Add(time.Minute * 10)
-	time.Sleep(time.Until(nextTime))
-	go reloadCurrenciesInMemory()
-}
-
-func updateQuotesExchangeratesapiInDB() {
+// currencyTimer - Currency Updater
+func currencyTimer() {
+	nextTime := time.Now().Truncate(time.Hour * 2)
+	nextTime = nextTime.Add(time.Hour * 2)
+	// Check plugins and Update
 	if Config.Plugins.Exchangeratesapi {
 		exchangeratesapi()
 	}
-	nextTime := time.Now().Truncate(time.Hour * 2)
-	nextTime = nextTime.Add(time.Hour * 2)
-	time.Sleep(time.Until(nextTime))
-	go updateQuotesExchangeratesapiInDB()
-}
-
-func updateBLRDInDB() {
 	if Config.Plugins.Blrd {
 		blrdRub()
 	}
-	nextTime := time.Now().Truncate(time.Hour * 2)
-	nextTime = nextTime.Add(time.Hour * 2)
+	if Config.Plugins.Srb {
+		SrbDinar()
+	}
+
+	if Config.Plugins.Ukr {
+		UkrUAH()
+	}
+
 	time.Sleep(time.Until(nextTime))
-	go updateBLRDInDB()
+
+	go currencyTimer()
+}
+
+func reloadCurrenciesInMemory() {
+	getAllElementsinMemory()
+	nextTime := time.Now().Truncate(time.Minute * 5)
+	nextTime = nextTime.Add(time.Minute * 5)
+	time.Sleep(time.Until(nextTime))
+	go reloadCurrenciesInMemory()
 }
 
 func updateQuotesCryptocurrenciesInDB() {
@@ -65,11 +69,9 @@ func main() {
 
 	go reloadCurrenciesInMemory()
 
-	go updateQuotesExchangeratesapiInDB()
+	go currencyTimer()
 
 	go updateQuotesCryptocurrenciesInDB()
-
-	go updateBLRDInDB()
 
 	r := mux.NewRouter().StrictSlash(true)
 

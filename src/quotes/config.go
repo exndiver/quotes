@@ -33,6 +33,8 @@ type Plugins struct {
 	Exchangeratesapi bool
 	Crypto           bool
 	Blrd             bool
+	Srb              bool
+	Ukr              bool
 }
 
 // getConfig - loading config file
