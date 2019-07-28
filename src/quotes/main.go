@@ -56,6 +56,10 @@ func currencyTimer() {
 		AMD()
 	}
 
+	if Config.Plugins.Gel {
+		GEL()
+	}
+
 	time.Sleep(time.Until(nextTime))
 
 	go currencyTimer()
