@@ -12,10 +12,10 @@ func KZT() {
 	resp, err := htmlquery.LoadURL("https://nationalbank.kz/?furl=cursFull&switch=eng")
 
 	if err != nil {
-		Logger2Errors("Error importing from Srb bank")
+		Logger2Errors("Error importing from KZT bank")
 		return
 	}
-	Logger2("Srb was imported")
+	Logger2("KZT was imported")
 	var a *html.Node
 	for _, n := range htmlquery.Find(resp, "/html/body/table/tbody/tr[3]/td/table/tbody/tr/td[3]/div[2]/form/table/tbody/tr") {
 		c := htmlquery.FindOne(n, "//td[3]")

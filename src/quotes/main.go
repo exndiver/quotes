@@ -48,6 +48,10 @@ func currencyTimer() {
 		KZT()
 	}
 
+	if Config.Plugins.Azt {
+		AZT()
+	}
+
 	time.Sleep(time.Until(nextTime))
 
 	go currencyTimer()

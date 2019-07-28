@@ -36,6 +36,7 @@ type Plugins struct {
 	Srb              bool
 	Ukr              bool
 	Kzt              bool
+	Azt              bool
 }
 
 // getConfig - loading config file
