@@ -37,6 +37,7 @@ type Plugins struct {
 	Ukr              bool
 	Kzt              bool
 	Azt              bool
+	Amd              bool
 }
 
 // getConfig - loading config file
