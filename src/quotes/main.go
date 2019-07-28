@@ -31,15 +31,21 @@ func currencyTimer() {
 	if Config.Plugins.Exchangeratesapi {
 		exchangeratesapi()
 	}
+
 	if Config.Plugins.Blrd {
 		blrdRub()
 	}
+
 	if Config.Plugins.Srb {
 		SrbDinar()
 	}
 
 	if Config.Plugins.Ukr {
 		UkrUAH()
+	}
+
+	if Config.Plugins.Kzt {
+		KZT()
 	}
 
 	time.Sleep(time.Until(nextTime))

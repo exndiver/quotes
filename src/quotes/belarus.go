@@ -17,6 +17,7 @@ func blrdRub() {
 
 	if err != nil {
 		Logger2Errors("Error importing from blrd bank")
+		return
 	}
 
 	Logger2("Belarus Rub was imported")

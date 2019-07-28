@@ -13,6 +13,7 @@ func SrbDinar() {
 
 	if err != nil {
 		Logger2Errors("Error importing from Srb bank")
+		return
 	}
 	Logger2("Srb was imported")
 	var a *html.Node

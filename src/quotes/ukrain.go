@@ -18,6 +18,7 @@ func UkrUAH() {
 
 	if err != nil {
 		Logger2Errors("Error importing from UKR bank")
+		return
 	}
 
 	Logger2("Ukr was imported")
