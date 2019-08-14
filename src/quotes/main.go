@@ -8,6 +8,8 @@ import (
 
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
+
+	"github.com/coreos/go-systemd/daemon"
 )
 
 // Config - main configuration from config.json file
@@ -102,5 +104,6 @@ func main() {
 	r.HandleFunc("/api/GetRates/{groupID}/{symbol}", getRatesBasedAPI).Methods("GET")
 
 	fmt.Printf("Starting server for testing HTTP POST...\n")
+	daemon.SdNotify(false, "READY=1")
 	log.Print(http.ListenAndServe(Config.Hosts.Service, handlers.CORS(handlers.AllowedOrigins([]string{"*"}))(r)))
 }
