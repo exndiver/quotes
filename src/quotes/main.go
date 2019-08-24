@@ -15,6 +15,9 @@ import (
 // Config - main configuration from config.json file
 var Config = getConfig()
 
+// Locales - list of all Currencies titles
+var Locales = loadLocales()
+
 // Quote - Struct for qoute
 type Quote struct {
 	Symbol   string  `json:"symbol"`
@@ -86,12 +89,12 @@ func updateQuotesCryptocurrenciesInDB() {
 }
 
 func main() {
+	getLocale("ru_RU")
+	//go reloadCurrenciesInMemory()
 
-	go reloadCurrenciesInMemory()
+	//go currencyTimer()
 
-	go currencyTimer()
-
-	go updateQuotesCryptocurrenciesInDB()
+	//go updateQuotesCryptocurrenciesInDB()
 
 	r := mux.NewRouter().StrictSlash(true)
 
@@ -102,6 +105,8 @@ func main() {
 	r.HandleFunc("/api/GetRates/", getRatesAPI).Methods("GET")
 
 	r.HandleFunc("/api/GetRates/{groupID}/{symbol}", getRatesBasedAPI).Methods("GET")
+
+	r.HandleFunc("/api/GetTitles/{locale}/", getTitles).Methods("GET")
 
 	fmt.Printf("Starting server for testing HTTP POST...\n")
 	daemon.SdNotify(false, "READY=1")

@@ -39,3 +39,11 @@ func getRatesBasedAPI(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Write(getRatesBasedFromCache(groupID, vars["symbol"]))
 }
+
+func getTitles(w http.ResponseWriter, r *http.Request) {
+	Logger1(r)
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	vars := mux.Vars(r)
+	w.Write(getLocale(vars["locale"]))
+}

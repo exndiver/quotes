@@ -14,6 +14,7 @@ type Conf struct {
 	AvialibleTypes string
 	AvialibleList  map[string]string
 	Plugins        Plugins
+	DefaultLocale  string
 	Cryptoapilist  map[string]string
 }
 
