@@ -1,5 +1,5 @@
 {
-    "en_US": {
+    "en": {
         "EUR":"Euro",
         "CAD":"Canadian Dollar",
         "HKD":"Hong Kong Dollar",
@@ -56,7 +56,7 @@
         "UZS": "Uzbekistan Som",
         "XAU": "Gold"
     },
-    "ru_RU": {
+    "ru": {
         "EUR":"Евро",
         "CAD":"Канадский Доллар",
         "HKD":"Гонконгский Доллар",
