@@ -122,6 +122,7 @@ func writeNewCurrency(currency Quote) {
 // writeHistory - Working with history of quotes
 func writeHistory(currency Quote) {
 	var result []*HistoryQuote
+	fmt.Printf("sdasd")
 	var date = time.Now().Format("01-02-2006")
 	client := dbConnect()
 	collection := client.Database("Quotes").Collection("History")
