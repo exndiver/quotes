@@ -104,6 +104,7 @@ func updateRate(currency Quote) {
 		log.Fatal(err)
 	}
 	client.Disconnect(ctx)
+	fmt.Printf("asdasds")
 	writeHistory(currency)
 }
 
