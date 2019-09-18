@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"time"
 
@@ -149,12 +150,13 @@ func writeHistory(currency Quote) {
 		log.Fatal(err)
 	}
 	cur.Close(ctx)
-
+	fmt.Print("%v", len(result))
 	if len(result) >= 1 {
 		Updatehistory(currency)
 		return
 	}
 	if len(result) < 1 {
+		fmt.Print("%v", len(result))
 		AddHistory(currency)
 		return
 	}
