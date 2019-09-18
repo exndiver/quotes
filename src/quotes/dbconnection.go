@@ -150,7 +150,7 @@ func writeHistory(currency Quote) {
 		log.Fatal(err)
 	}
 	cur.Close(ctx)
-	fmt.Print("%v", len(result))
+	fmt.Printf("%v", len(result))
 	if len(result) >= 1 {
 		Updatehistory(currency)
 		return
