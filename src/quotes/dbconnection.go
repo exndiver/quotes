@@ -104,7 +104,6 @@ func updateRate(currency Quote) {
 		log.Fatal(err)
 	}
 	client.Disconnect(ctx)
-	fmt.Printf("asdasds")
 	writeHistory(currency)
 }
 
@@ -123,7 +122,6 @@ func writeNewCurrency(currency Quote) {
 // writeHistory - Working with history of quotes
 func writeHistory(currency Quote) {
 	var result []*HistoryQuote
-	fmt.Printf("sdasd")
 	var date = time.Now().Format("01-02-2006")
 	client := dbConnect()
 	collection := client.Database("Quotes").Collection("History")
@@ -152,7 +150,6 @@ func writeHistory(currency Quote) {
 		log.Fatal(err)
 	}
 	cur.Close(ctx)
-	fmt.Printf("%v", len(result))
 	if len(result) >= 1 {
 		Updatehistory(currency)
 		return
