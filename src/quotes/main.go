@@ -25,6 +25,14 @@ type Quote struct {
 	Category int     `json:"category"`
 }
 
+// HistoryQuote - Struct for History
+type HistoryQuote struct {
+	Symbol   string  `json:"symbol"`
+	Category int     `json:"category"`
+	Date     string  `json:"date"`
+	Rate     float64 `json:"rate"`
+}
+
 // QutesinMemory - in memory cache of all quotes in db
 var QutesinMemory []*Quote
 
