@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"time"
 
@@ -123,12 +122,14 @@ func writeNewCurrency(currency Quote) {
 func writeHistory(currency Quote) {
 	var result []*HistoryQuote
 	var date = time.Now().Format("01-02-2006")
+	var layout = "01-02-2006"
+	var d, _ = time.Parse(layout, date)
 	client := dbConnect()
 	collection := client.Database("Quotes").Collection("History")
 	filter := bson.D{
 		{"symbol", currency.Symbol},
 		{"category", currency.Category},
-		{"date", date},
+		{"date", d},
 	}
 
 	ctx, _ := context.WithTimeout(context.Background(), 30*time.Second)
@@ -155,7 +156,6 @@ func writeHistory(currency Quote) {
 		return
 	}
 	if len(result) < 1 {
-		fmt.Print("%v", len(result))
 		AddHistory(currency)
 		return
 	}
@@ -166,7 +166,9 @@ func AddHistory(currency Quote) {
 	client := dbConnect()
 	var h HistoryQuote
 	h.Category = currency.Category
-	h.Date = time.Now().Format("01-02-2006")
+	var layout = "01-02-2006"
+	var date = time.Now().Format("01-02-2006")
+	h.Date, _ = time.Parse(layout, date)
 	h.Rate = currency.Rate
 	h.Symbol = currency.Symbol
 	ctx, _ := context.WithTimeout(context.Background(), 30*time.Second)
@@ -181,12 +183,14 @@ func AddHistory(currency Quote) {
 // Updatehistory - update existing history
 func Updatehistory(currency Quote) {
 	var date = time.Now().Format("01-02-2006")
+	var layout = "01-02-2006"
+	var d, _ = time.Parse(layout, date)
 	client := dbConnect()
 	collection := client.Database("Quotes").Collection("History")
 	filter := bson.D{
 		{"symbol", currency.Symbol},
 		{"category", currency.Category},
-		{"date", date},
+		{"date", d},
 	}
 	update := bson.D{
 		{"$set", bson.D{
