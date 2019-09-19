@@ -99,7 +99,7 @@ func updateQuotesCryptocurrenciesInDB() {
 }
 
 func main() {
-	getLocale("ru_RU")
+
 	go reloadCurrenciesInMemory()
 
 	go currencyTimer()
