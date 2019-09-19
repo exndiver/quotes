@@ -71,9 +71,7 @@ func responseAvialibleCurrencies() []byte {
 	return jsonResult
 }
 
-func getHistory(d int, groupID int, symbol string) []byte {
-	var r = make(map[string]float64)
-
-	jsonResult, _ := json.Marshal(r)
+func getHistory(symbol string, groupID int, d int) []byte {
+	jsonResult, _ := json.Marshal(loadHistory(symbol, groupID, d))
 	return jsonResult
 }

@@ -114,6 +114,8 @@ func main() {
 
 	r.HandleFunc("/api/GetTitles/{locale}/", getTitles).Methods("GET")
 
+	r.HandleFunc("/api/GetHistory/{d}/{c}/{s}", getHistoryMethod).Methods("GET")
+
 	fmt.Printf("Starting server...\n")
 
 	log.Print(http.ListenAndServe(Config.Hosts.Service, handlers.CORS(handlers.AllowedOrigins([]string{"*"}))(r)))

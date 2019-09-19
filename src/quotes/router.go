@@ -47,3 +47,19 @@ func getTitles(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	w.Write(getLocale(vars["locale"]))
 }
+
+func getHistoryMethod(w http.ResponseWriter, r *http.Request) {
+	Logger1(r)
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	vars := mux.Vars(r)
+	d, err := strconv.Atoi(vars["d"])
+	if err != nil {
+		w.Write([]byte("OK! Nothing!\n"))
+	}
+	c, err := strconv.Atoi(vars["c"])
+	if err != nil {
+		w.Write([]byte("OK! Nothing!\n"))
+	}
+	w.Write(getHistory(vars["s"], c, d))
+}
