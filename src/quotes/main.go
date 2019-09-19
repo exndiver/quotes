@@ -71,6 +71,10 @@ func currencyTimer() {
 		GEL()
 	}
 
+	if Config.Plugins.OpenExRates {
+		openexchangerates()
+	}
+
 	time.Sleep(time.Until(nextTime))
 
 	go currencyTimer()

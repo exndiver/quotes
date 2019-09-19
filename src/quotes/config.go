@@ -8,14 +8,16 @@ import (
 
 // Conf - main config struct
 type Conf struct {
-	Hosts          Hosts
-	Service        string
-	Mongodb        string
-	AvialibleTypes string
-	AvialibleList  map[string]string
-	Plugins        Plugins
-	DefaultLocale  string
-	Cryptoapilist  map[string]string
+	Hosts               Hosts
+	Service             string
+	Mongodb             string
+	AvialibleTypes      string
+	AvialibleList       map[string]string
+	Plugins             Plugins
+	DefaultLocale       string
+	Cryptoapilist       map[string]string
+	OpenExRateCurList   string
+	OpenExRateMetalList string
 }
 
 // Hosts - hosts configurations
@@ -40,6 +42,7 @@ type Plugins struct {
 	Azt              bool
 	Amd              bool
 	Gel              bool
+	OpenExRates      bool
 }
 
 // getConfig - loading config file
