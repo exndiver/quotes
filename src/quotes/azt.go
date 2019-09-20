@@ -39,7 +39,7 @@ func AZT() {
 	}
 
 	str := Quote{
-		Symbol:   "AZT",
+		Symbol:   "AZN",
 		Rate:     r,
 		Category: 0,
 	}
