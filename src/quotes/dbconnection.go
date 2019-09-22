@@ -213,26 +213,18 @@ func Updatehistory(currency Quote) {
 
 func loadHistory(s string, c int, t int) map[string]float64 {
 	var r = make(map[string]float64)
-	var l = "01-02-2006"
-	var date1 = time.Now().Format("01-02-2006")
-	var dt0 = time.Now().Add(time.Hour * time.Duration(-24*t))
-	var date0 = dt0.Format("01-02-2006")
-	var d1, _ = time.Parse(l, date1)
-	var d0, _ = time.Parse(l, date0)
 
 	client := dbConnect()
 	collection := client.Database("Quotes").Collection("History")
 	filter := bson.D{
 		{"symbol", s},
 		{"category", c},
-		{"date", bson.D{
-			{"$gte", d0},
-			{"$lte", d1},
-		},
-		},
 	}
+	options := options.Find()
+	options.SetLimit(int64(t))
+	options.SetSort(bson.D{{"date", -1}})
 	ctx, _ := context.WithTimeout(context.Background(), 30*time.Second)
-	cur, err := collection.Find(ctx, filter)
+	cur, err := collection.Find(ctx, filter, options)
 	if err != nil {
 		log.Fatal(err)
 	}
