@@ -54,6 +54,9 @@ func getHistoryMethod(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	vars := mux.Vars(r)
 	d, err := strconv.Atoi(vars["d"])
+	if d < 1 {
+		d = 1
+	}
 	if err != nil {
 		w.Write([]byte("OK! Nothing!\n"))
 	}
