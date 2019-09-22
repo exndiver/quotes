@@ -18,6 +18,7 @@ type Conf struct {
 	Cryptoapilist       map[string]string
 	OpenExRateCurList   string
 	OpenExRateMetalList string
+	OpenExRateLink      string
 }
 
 // Hosts - hosts configurations

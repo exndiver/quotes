@@ -120,6 +120,12 @@ func writeNewCurrency(currency Quote) {
 
 // writeHistory - Working with history of quotes
 func writeHistory(currency Quote) {
+	var day = int(time.Now().Weekday())
+	if currency.Category != 1 {
+		if (day == 0) || (day == 6) {
+			return
+		}
+	}
 	var result []*HistoryQuote
 	var date = time.Now().Format("01-02-2006")
 	var layout = "01-02-2006"
