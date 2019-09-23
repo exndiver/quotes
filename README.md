@@ -5,4 +5,3 @@
 3. go get -u go.mongodb.org/mongo-driver
 4. go get -u github.com/antchfx/htmlquery
 5. go get -u github.com/exndiver/cache/memory
-6. go get -u github.com/exndiver/quotes/config

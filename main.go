@@ -10,15 +10,13 @@ import (
 	"github.com/exndiver/cache/memory"
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
-
-	"github.com/exndiver/quotes/config"
 )
 
 // storage - cache from pkg github.com/exndiver/cache
 var storage cache.Storage
 
 // Config - main configuration from config.json file
-var Config = config.Conf
+var Config = getConfig()
 
 // Locales - list of all Currencies titles
 var Locales = loadLocales()
@@ -108,8 +106,6 @@ func updateQuotesCryptocurrenciesInDB() {
 func main() {
 
 	storage = memory.NewStorage()
-
-	Config = config.getConfig()
 
 	go reloadCurrenciesInMemory()
 
