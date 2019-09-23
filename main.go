@@ -14,8 +14,11 @@ import (
 	"github.com/exndiver/quotes/config"
 )
 
+// storage - cache from pkg github.com/exndiver/cache
+var storage cache.Storage
+
 // Config - main configuration from config.json file
-var Config = getConfig()
+var Config = config.Conf
 
 // Locales - list of all Currencies titles
 var Locales = loadLocales()
@@ -37,9 +40,6 @@ type HistoryQuote struct {
 
 // QutesinMemory - in memory cache of all quotes in db
 var QutesinMemory []*Quote
-
-// storage - cache from pkg github.com/exndiver/cache
-var storage cache.Storage
 
 // currencyTimer - Currency Updater
 func currencyTimer() {
@@ -108,6 +108,8 @@ func updateQuotesCryptocurrenciesInDB() {
 func main() {
 
 	storage = memory.NewStorage()
+
+	Config = config.getConfig()
 
 	go reloadCurrenciesInMemory()
 
