@@ -41,8 +41,8 @@ var storage cache.Storage
 
 // currencyTimer - Currency Updater
 func currencyTimer() {
-	nextTime := time.Now().Truncate(time.Hour * 2)
-	nextTime = nextTime.Add(time.Hour * 2)
+	nextTime := time.Now().Truncate(time.Hour * 1)
+	nextTime = nextTime.Add(time.Hour * 1)
 	// Check plugins and Update
 	if Config.Plugins.Exchangeratesapi {
 		exchangeratesapi()
