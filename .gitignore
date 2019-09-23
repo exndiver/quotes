@@ -10,3 +10,4 @@ request_logs.error.log
 src/quotes/quotes
 golang.org
 bin
+cache

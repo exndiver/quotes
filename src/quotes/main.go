@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/exndiver/cache"
+	"github.com/exndiver/cache/memory"
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 )
@@ -33,6 +35,9 @@ type HistoryQuote struct {
 
 // QutesinMemory - in memory cache of all quotes in db
 var QutesinMemory []*Quote
+
+// storage - cache from pkg github.com/exndiver/cache
+var storage cache.Storage
 
 // currencyTimer - Currency Updater
 func currencyTimer() {
@@ -100,6 +105,8 @@ func updateQuotesCryptocurrenciesInDB() {
 
 func main() {
 
+	storage = memory.NewStorage()
+
 	go reloadCurrenciesInMemory()
 
 	go currencyTimer()
@@ -118,9 +125,10 @@ func main() {
 
 	r.HandleFunc("/api/GetTitles/{locale}/", getTitles).Methods("GET")
 
-	r.HandleFunc("/api/GetHistory/{d}/{c}/{s}", getHistoryMethod).Methods("GET")
+	r.Handle("/api/GetHistory/{d}/{c}/{s}", cachedHistory("3h")).Methods("GET")
 
 	fmt.Printf("Starting server...\n")
 
 	log.Print(http.ListenAndServe(Config.Hosts.Service, handlers.CORS(handlers.AllowedOrigins([]string{"*"}))(r)))
+
 }
