@@ -10,6 +10,8 @@ import (
 	"github.com/exndiver/cache/memory"
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
+
+	"github.com/exndiver/quotes/config"
 )
 
 // Config - main configuration from config.json file
