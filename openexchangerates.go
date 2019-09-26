@@ -45,6 +45,18 @@ func openexchangerates() {
 			Rate:     r,
 			Category: 0,
 		}
+		if v == "BYN" {
+			str2 := Quote{
+				Symbol:   "BYR",
+				Rate:     r,
+				Category: 0,
+			}
+			if isElementInDB(str2) {
+				updateRate(str2)
+			} else {
+				writeNewCurrency(str2)
+			}
+		}
 		if isElementInDB(str) {
 			updateRate(str)
 		} else {
