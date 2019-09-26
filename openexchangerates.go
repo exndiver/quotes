@@ -35,7 +35,11 @@ func openexchangerates() {
 	}
 	var u = 1 / quotes.Rates["EUR"]
 	for _, v := range strings.Split(Config.OpenExRateCurList, ",") {
-		var r = u * quotes.Rates[v]
+		if v == "EUR" {
+			var r = 1
+		} else {
+			var r = u * quotes.Rates[v]
+		}
 		str := Quote{
 			Symbol:   v,
 			Rate:     r,
