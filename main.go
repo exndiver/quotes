@@ -41,10 +41,10 @@ var QutesinMemory []*Quote
 
 // currencyTimer - Currency Updater
 func currencyTimer() {
-	var d = 1
+	var d = time.Duration(1)
 	var day = int(time.Now().Weekday())
 	if (day == 0) || (day == 6) {
-		d = 12
+		d = time.Duration(12)
 	}
 	nextTime := time.Now().Truncate(time.Hour * d)
 	nextTime = nextTime.Add(time.Hour * d)
