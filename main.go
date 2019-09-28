@@ -41,8 +41,13 @@ var QutesinMemory []*Quote
 
 // currencyTimer - Currency Updater
 func currencyTimer() {
-	nextTime := time.Now().Truncate(time.Hour * 1)
-	nextTime = nextTime.Add(time.Hour * 1)
+	var d = 1
+	var day = int(time.Now().Weekday())
+	if (day == 0) || (day == 6) {
+		d = 12
+	}
+	nextTime := time.Now().Truncate(time.Hour * d)
+	nextTime = nextTime.Add(time.Hour * d)
 	// Check plugins and Update
 	if Config.Plugins.Exchangeratesapi {
 		exchangeratesapi()
