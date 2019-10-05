@@ -107,10 +107,14 @@ func cachedHistory(duration string) http.Handler {
 func postFeedback(w http.ResponseWriter, r *http.Request) {
 	Logger1(r)
 
-	var message feedback.Message
 	if r.FormValue("message") != "" {
-		message = googlesheet.NewFeedback("", r.FormValue("message"))
-		message.Send("19Rk6QACMPc5W2Am1_odkY5Mb8nZLFkouok0BYgvO-B4")
+		go pf(r.FormValue("message"))
 	}
 	w.Write([]byte("OK!\n"))
+}
+
+func pf(msg string) {
+	var message feedback.Message
+	message = googlesheet.NewFeedback("", msg)
+	message.Send(Config.Feedback)
 }

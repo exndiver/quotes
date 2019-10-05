@@ -19,6 +19,7 @@ type Conf struct {
 	OpenExRateCurList   string
 	OpenExRateMetalList string
 	OpenExRateLink      string
+	Feedback            string
 }
 
 // Hosts - hosts configurations

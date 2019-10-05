@@ -112,11 +112,11 @@ func main() {
 
 	storage = memory.NewStorage()
 
-	//go reloadCurrenciesInMemory()
+	go reloadCurrenciesInMemory()
 
-	//go currencyTimer()
+	go currencyTimer()
 
-	//go updateQuotesCryptocurrenciesInDB()
+	go updateQuotesCryptocurrenciesInDB()
 
 	r := mux.NewRouter().StrictSlash(true)
 
