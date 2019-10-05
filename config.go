@@ -20,6 +20,7 @@ type Conf struct {
 	OpenExRateMetalList string
 	OpenExRateLink      string
 	Feedback            string
+	Proxy               bool
 }
 
 // Hosts - hosts configurations

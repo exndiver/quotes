@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/exndiver/feedback"
@@ -108,13 +109,13 @@ func postFeedback(w http.ResponseWriter, r *http.Request) {
 	Logger1(r)
 
 	if r.FormValue("message") != "" {
-		go pf(r.FormValue("message"))
+		go pf(strings.Join(r.Header["X-Forwarded-For"], ","), r.FormValue("message"))
 	}
 	w.Write([]byte("OK!\n"))
 }
 
-func pf(msg string) {
+func pf(c string, msg string) {
 	var message feedback.Message
-	message = googlesheet.NewFeedback("", msg)
+	message = googlesheet.NewFeedback(c, msg)
 	message.Send(Config.Feedback)
 }
