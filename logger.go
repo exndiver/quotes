@@ -4,6 +4,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 )
 
@@ -16,7 +17,7 @@ func Logger1(r *http.Request) {
 	log.SetOutput(f)
 	log.Printf(
 		"%s\t-\t%s\t%s\t%s\t%s\t",
-		r.Header["X-Forwarded-For"],
+		strings.Join(r.Header["X-Forwarded-For"], ","),
 		r.Method,
 		r.RequestURI,
 		r.Header,
