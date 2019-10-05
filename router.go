@@ -6,6 +6,9 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/exndiver/feedback"
+	"github.com/exndiver/feedback/googlesheet"
+
 	//	"encoding/json"
 	"github.com/gorilla/mux"
 )
@@ -99,4 +102,15 @@ func cachedHistory(duration string) http.Handler {
 			w.Write(content)
 		}
 	})
+}
+
+func postFeedback(w http.ResponseWriter, r *http.Request) {
+	Logger1(r)
+
+	var message feedback.Message
+	if r.FormValue("message") != "" {
+		message = googlesheet.NewFeedback("", r.FormValue("message"))
+		message.Send("19Rk6QACMPc5W2Am1_odkY5Mb8nZLFkouok0BYgvO-B4")
+	}
+	w.Write([]byte("OK!\n"))
 }

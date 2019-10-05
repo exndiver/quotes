@@ -11,3 +11,5 @@ quotes
 golang.org
 bin
 cache
+credentials.json
+token.json

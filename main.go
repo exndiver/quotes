@@ -112,11 +112,11 @@ func main() {
 
 	storage = memory.NewStorage()
 
-	go reloadCurrenciesInMemory()
+	//go reloadCurrenciesInMemory()
 
-	go currencyTimer()
+	//go currencyTimer()
 
-	go updateQuotesCryptocurrenciesInDB()
+	//go updateQuotesCryptocurrenciesInDB()
 
 	r := mux.NewRouter().StrictSlash(true)
 
@@ -131,6 +131,8 @@ func main() {
 	r.HandleFunc("/api/GetTitles/{locale}/", getTitles).Methods("GET")
 
 	r.Handle("/api/GetHistory/{d}/{c}/{s}", cachedHistory("3h")).Methods("GET")
+
+	r.HandleFunc("/api/SendFeedback", postFeedback).Methods("POST")
 
 	fmt.Printf("Starting server...\n")
 
