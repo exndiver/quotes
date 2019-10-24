@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"math"
+	"sort"
 	"strings"
 )
 
@@ -65,6 +66,7 @@ func responseAvialibleCurrencies() []byte {
 		for _, Cur := range strings.Split(Config.AvialibleList[Type], ",") {
 			temArr = append(temArr, Cur)
 		}
+		sort.Strings(temArr)
 		r = append(r, Response{Type, temArr})
 	}
 	jsonResult, _ := json.Marshal(r)
