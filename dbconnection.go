@@ -27,7 +27,6 @@ func getAllElementsinMemory() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	client.Disconnect(ctx)
 	for cur.Next(ctx) {
 		var elem Quote
 		err := cur.Decode(&elem)
@@ -50,6 +49,7 @@ func getAllElementsinMemory() {
 	if err := cur.Err(); err != nil {
 		log.Fatal(err)
 	}
+	client.Disconnect(ctx)
 	cur.Close(ctx)
 }
 
@@ -66,7 +66,6 @@ func isElementInDB(currency Quote) bool {
 	if err != nil {
 		log.Fatal(err)
 	}
-	client.Disconnect(ctx)
 	for cur.Next(ctx) {
 		var elem Quote
 		err := cur.Decode(&elem)
@@ -78,6 +77,7 @@ func isElementInDB(currency Quote) bool {
 	if err := cur.Err(); err != nil {
 		log.Fatal(err)
 	}
+	client.Disconnect(ctx)
 	cur.Close(ctx)
 	if len(result) >= 1 {
 		return true
@@ -143,7 +143,6 @@ func writeHistory(currency Quote) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	client.Disconnect(ctx)
 
 	for cur.Next(ctx) {
 		var elem HistoryQuote
@@ -156,6 +155,7 @@ func writeHistory(currency Quote) {
 	if err := cur.Err(); err != nil {
 		log.Fatal(err)
 	}
+	client.Disconnect(ctx)
 	cur.Close(ctx)
 	if len(result) >= 1 {
 		Updatehistory(currency)
@@ -229,8 +229,6 @@ func loadHistory(s string, c int, t int) map[string]float64 {
 		log.Fatal(err)
 	}
 
-	client.Disconnect(ctx)
-
 	for cur.Next(ctx) {
 		var elem HistoryQuote
 		err := cur.Decode(&elem)
@@ -242,6 +240,7 @@ func loadHistory(s string, c int, t int) map[string]float64 {
 	if err := cur.Err(); err != nil {
 		log.Fatal(err)
 	}
-
+	client.Disconnect(ctx)
+	cur.Close(ctx)
 	return r
 }
