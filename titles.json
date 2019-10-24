@@ -79,7 +79,9 @@
         "TOP": "Tonga Pa'anga",
         "TTD": "Trinidad and Tobago Dollar",
         "SYP": "Syrian Pound",
-        "EGP": "Egyptian Pound"
+        "EGP": "Egyptian Pound",
+        "PKR": "Pakistani Rupee",
+        "IQD": "Iraqi Dinar"
     },
     "ru": {
         "EUR":"Евро",
@@ -161,6 +163,8 @@
         "TOP": "Тонганская Паанга",
         "TTD": "Доллар Тринидада и Тобаго",
         "SYP": "Сирийский Фунт",
-        "EGP": "Египетский Фунт"
+        "EGP": "Египетский Фунт",
+        "PKR": "Пакистанская Рупия",
+        "IQD": "Иракский Динар"
     }
 }
