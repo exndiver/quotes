@@ -88,7 +88,8 @@
         "AOA": "Angolan Kwanza",
         "AWG": "Aruban Florin",
         "BAM": "Bosnia and Herzegovina convertible mark",
-        "BBD": "Barbados Dollar"
+        "BBD": "Barbados Dollar",
+        "BDT": "Bangladeshi Taka"
     },
     "ru": {
         "EUR":"Евро",
@@ -179,6 +180,7 @@
         "AOA": "Ангольская Кванза ",
         "AWG": "Арубанский Флорин",
         "BAM": "Конвертируемая марка Боснии и Герцеговины",
-        "BBD": "Барбадосский Доллар"
+        "BBD": "Барбадосский Доллар",
+        "BDT": "Бангладешская така"
     }
 }
