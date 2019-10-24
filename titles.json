@@ -81,7 +81,14 @@
         "SYP": "Syrian Pound",
         "EGP": "Egyptian Pound",
         "PKR": "Pakistani Rupee",
-        "IQD": "Iraqi Dinar"
+        "IQD": "Iraqi Dinar",
+        "AFN": "Afghan Afghani",
+        "ALL": "Albanian Lek",
+        "ANG": "Netherlands Antillean Guilder",
+        "AOA": "Angolan Kwanza",
+        "AWG": "Aruban Florin",
+        "BAM": "Bosnia and Herzegovina convertible mark",
+        "BBD": "Barbados Dollar"
     },
     "ru": {
         "EUR":"Евро",
@@ -165,6 +172,13 @@
         "SYP": "Сирийский Фунт",
         "EGP": "Египетский Фунт",
         "PKR": "Пакистанская Рупия",
-        "IQD": "Иракский Динар"
+        "IQD": "Иракский Динар",
+        "AFN": "Афганский Афгани",
+        "ALL": "Албанский Лек",
+        "ANG": "Нидерландский Антильский Гульден",
+        "AOA": "Ангольская Кванза ",
+        "AWG": "Арубанский Флорин",
+        "BAM": "Конвертируемая марка Боснии и Герцеговины",
+        "BBD": "Барбадосский Доллар"
     }
 }
