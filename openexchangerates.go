@@ -19,21 +19,21 @@ func openexchangerates() {
 	var quotes OpenExResponse
 	resp, err := http.Get(Config.OpenExRateLink)
 	if err != nil {
-		loggerApi_errors("Error importing from openexchangerates")
+		loggerAPIErrors("Error importing from openexchangerates")
 		return
 	}
 
-	loggerApi("Apiexchange is imported")
+	loggerAPI("Apiexchange is imported")
 
 	defer resp.Body.Close()
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		loggerApi_errors("Error parsing JSON openexchangerates.org")
+		loggerAPIErrors("Error parsing JSON openexchangerates.org")
 		return
 	}
 	if err := json.Unmarshal(body, &quotes); err != nil {
-		loggerApi_errors("Error parsing JSON openexchangerates.org")
+		loggerAPIErrors("Error parsing JSON openexchangerates.org")
 		return
 	}
 	var u = 1 / quotes.Rates["EUR"]

@@ -21,6 +21,8 @@ var Config = getConfig()
 // Locales - list of all Currencies titles
 var Locales = loadLocales()
 
+var client = dbConnect()
+
 // Quote - Struct for qoute
 type Quote struct {
 	Symbol   string  `json:"symbol"`

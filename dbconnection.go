@@ -2,8 +2,11 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"time"
+
+	"go.mongodb.org/mongo-driver/bson/primitive"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -11,24 +14,35 @@ import (
 )
 
 func dbConnect() *mongo.Client {
-	client, err := mongo.NewClient(options.Client().ApplyURI(Config.Hosts.Mongodb))
-	ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
-	if err = client.Connect(ctx); err != nil {
+	clientOptions := options.Client().ApplyURI(Config.Hosts.Mongodb)
+	client, err := mongo.Connect(context.TODO(), clientOptions)
+	if err != nil {
 		//log.Fatal(err)
 		loggerFatalErrors(err)
 	}
+	// Check the connection
+	err = client.Ping(context.TODO(), nil)
+
+	if err != nil {
+		loggerFatalErrors(err)
+	}
+
+	fmt.Println("Connected to MongoDB!")
 	return client
 }
 
 func getAllElementsinMemory() {
-	client := dbConnect()
+	errPing := client.Ping(context.TODO(), nil)
+	if errPing != nil {
+		client = dbConnect()
+		loggerErrors("DB connection is lost")
+	}
 	collection := client.Database("Quotes").Collection("Currencies")
-	ctx, _ := context.WithTimeout(context.Background(), 30*time.Second)
-	cur, err := collection.Find(ctx, bson.D{})
+	cur, err := collection.Find(context.TODO(), bson.D{})
 	if err != nil {
 		loggerFatalErrors(err)
 	}
-	for cur.Next(ctx) {
+	for cur.Next(context.TODO()) {
 		var elem Quote
 		err := cur.Decode(&elem)
 		if err != nil {
@@ -50,24 +64,27 @@ func getAllElementsinMemory() {
 	if err := cur.Err(); err != nil {
 		loggerFatalErrors(err)
 	}
-	client.Disconnect(ctx)
-	cur.Close(ctx)
+
+	cur.Close(context.TODO())
 }
 
 func isElementInDB(currency Quote) bool {
 	var result []*Quote
-	client := dbConnect()
+	errPing := client.Ping(context.TODO(), nil)
+	if errPing != nil {
+		client = dbConnect()
+		loggerErrors("DB connection is lost")
+	}
 	collection := client.Database("Quotes").Collection("Currencies")
 	filter := bson.D{
-		{"symbol", currency.Symbol},
-		{"category", currency.Category},
+		primitive.E{Key: "symbol", Value: currency.Symbol},
+		primitive.E{Key: "category", Value: currency.Category},
 	}
-	ctx, _ := context.WithTimeout(context.Background(), 30*time.Second)
-	cur, err := collection.Find(ctx, filter)
+	cur, err := collection.Find(context.TODO(), filter)
 	if err != nil {
 		loggerFatalErrors(err)
 	}
-	for cur.Next(ctx) {
+	for cur.Next(context.TODO()) {
 		var elem Quote
 		err := cur.Decode(&elem)
 		if err != nil {
@@ -78,8 +95,8 @@ func isElementInDB(currency Quote) bool {
 	if err := cur.Err(); err != nil {
 		loggerFatalErrors(err)
 	}
-	client.Disconnect(ctx)
-	cur.Close(ctx)
+
+	cur.Close(context.TODO())
 	if len(result) >= 1 {
 		return true
 	}
@@ -87,35 +104,41 @@ func isElementInDB(currency Quote) bool {
 }
 
 func updateRate(currency Quote) {
-	client := dbConnect()
+	errPing := client.Ping(context.TODO(), nil)
+	if errPing != nil {
+		client = dbConnect()
+		loggerErrors("DB connection is lost")
+	}
 	collection := client.Database("Quotes").Collection("Currencies")
 	filter := bson.D{
-		{"symbol", currency.Symbol},
-		{"category", currency.Category},
+		primitive.E{Key: "symbol", Value: currency.Symbol},
+		primitive.E{Key: "category", Value: currency.Category},
 	}
 	update := bson.D{
-		{"$set", bson.D{
-			{"rate", currency.Rate},
+		primitive.E{Key: "$set", Value: bson.D{
+			primitive.E{Key: "rate", Value: currency.Rate},
 		}},
 	}
-	ctx, _ := context.WithTimeout(context.Background(), 30*time.Second)
-	_, err := collection.UpdateOne(ctx, filter, update)
+	_, err := collection.UpdateOne(context.TODO(), filter, update)
 	if err != nil {
 		loggerFatalErrors(err)
 	}
-	client.Disconnect(ctx)
+
 	writeHistory(currency)
 }
 
 func writeNewCurrency(currency Quote) {
-	client := dbConnect()
-	ctx, _ := context.WithTimeout(context.Background(), 30*time.Second)
+	errPing := client.Ping(context.TODO(), nil)
+	if errPing != nil {
+		client = dbConnect()
+		loggerErrors("DB connection is lost")
+	}
 	collection := client.Database("Quotes").Collection("Currencies")
-	_, err := collection.InsertOne(ctx, currency)
+	_, err := collection.InsertOne(context.TODO(), currency)
 	if err != nil {
 		loggerFatalErrors(err)
 	}
-	client.Disconnect(ctx)
+
 	writeHistory(currency)
 }
 
@@ -131,21 +154,24 @@ func writeHistory(currency Quote) {
 	var date = time.Now().Format("01-02-2006")
 	var layout = "01-02-2006"
 	var d, _ = time.Parse(layout, date)
-	client := dbConnect()
+	errPing := client.Ping(context.TODO(), nil)
+	if errPing != nil {
+		client = dbConnect()
+		loggerErrors("DB connection is lost")
+	}
 	collection := client.Database("Quotes").Collection("History")
 	filter := bson.D{
-		{"symbol", currency.Symbol},
-		{"category", currency.Category},
-		{"date", d},
+		primitive.E{Key: "symbol", Value: currency.Symbol},
+		primitive.E{Key: "category", Value: currency.Category},
+		primitive.E{Key: "date", Value: d},
 	}
 
-	ctx, _ := context.WithTimeout(context.Background(), 30*time.Second)
-	cur, err := collection.Find(ctx, filter)
+	cur, err := collection.Find(context.TODO(), filter)
 	if err != nil {
 		loggerFatalErrors(err)
 	}
 
-	for cur.Next(ctx) {
+	for cur.Next(context.TODO()) {
 		var elem HistoryQuote
 		err := cur.Decode(&elem)
 		if err != nil {
@@ -156,8 +182,8 @@ func writeHistory(currency Quote) {
 	if err := cur.Err(); err != nil {
 		loggerFatalErrors(err)
 	}
-	client.Disconnect(ctx)
-	cur.Close(ctx)
+
+	cur.Close(context.TODO())
 	if len(result) >= 1 {
 		Updatehistory(currency)
 		return
@@ -170,7 +196,11 @@ func writeHistory(currency Quote) {
 
 // AddHistory - add new history record
 func AddHistory(currency Quote) {
-	client := dbConnect()
+	errPing := client.Ping(context.TODO(), nil)
+	if errPing != nil {
+		client = dbConnect()
+		loggerErrors("DB connection is lost")
+	}
 	var h HistoryQuote
 	h.Category = currency.Category
 	var layout = "01-02-2006"
@@ -178,13 +208,12 @@ func AddHistory(currency Quote) {
 	h.Date, _ = time.Parse(layout, date)
 	h.Rate = currency.Rate
 	h.Symbol = currency.Symbol
-	ctx, _ := context.WithTimeout(context.Background(), 30*time.Second)
 	collection := client.Database("Quotes").Collection("History")
-	_, err := collection.InsertOne(ctx, h)
+	_, err := collection.InsertOne(context.TODO(), h)
 	if err != nil {
 		loggerFatalErrors(err)
 	}
-	client.Disconnect(ctx)
+
 }
 
 // Updatehistory - update existing history
@@ -192,45 +221,51 @@ func Updatehistory(currency Quote) {
 	var date = time.Now().Format("01-02-2006")
 	var layout = "01-02-2006"
 	var d, _ = time.Parse(layout, date)
-	client := dbConnect()
+	errPing := client.Ping(context.TODO(), nil)
+	if errPing != nil {
+		client = dbConnect()
+		loggerErrors("DB connection is lost")
+	}
 	collection := client.Database("Quotes").Collection("History")
 	filter := bson.D{
-		{"symbol", currency.Symbol},
-		{"category", currency.Category},
-		{"date", d},
+		primitive.E{Key: "symbol", Value: currency.Symbol},
+		primitive.E{Key: "category", Value: currency.Category},
+		primitive.E{Key: "date", Value: d},
 	}
 	update := bson.D{
-		{"$set", bson.D{
-			{"rate", currency.Rate},
+		primitive.E{Key: "$set", Value: bson.D{
+			primitive.E{Key: "rate", Value: currency.Rate},
 		}},
 	}
-	ctx, _ := context.WithTimeout(context.Background(), 30*time.Second)
-	_, err := collection.UpdateOne(ctx, filter, update)
+	_, err := collection.UpdateOne(context.TODO(), filter, update)
 	if err != nil {
 		loggerFatalErrors(err)
 	}
-	client.Disconnect(ctx)
+
 }
 
 func loadHistory(s string, c int, t int) map[string]float64 {
 	var r = make(map[string]float64)
 
-	client := dbConnect()
+	errPing := client.Ping(context.TODO(), nil)
+	if errPing != nil {
+		client = dbConnect()
+		loggerErrors("DB connection is lost")
+	}
 	collection := client.Database("Quotes").Collection("History")
 	filter := bson.D{
-		{"symbol", s},
-		{"category", c},
+		primitive.E{Key: "symbol", Value: s},
+		primitive.E{Key: "category", Value: c},
 	}
 	options := options.Find()
 	options.SetLimit(int64(t))
-	options.SetSort(bson.D{{"date", -1}})
-	ctx, _ := context.WithTimeout(context.Background(), 30*time.Second)
-	cur, err := collection.Find(ctx, filter, options)
+	options.SetSort(bson.D{primitive.E{Key: "date", Value: -1}})
+	cur, err := collection.Find(context.TODO(), filter, options)
 	if err != nil {
 		loggerFatalErrors(err)
 	}
 
-	for cur.Next(ctx) {
+	for cur.Next(context.TODO()) {
 		var elem HistoryQuote
 		err := cur.Decode(&elem)
 		if err != nil {
@@ -241,7 +276,7 @@ func loadHistory(s string, c int, t int) map[string]float64 {
 	if err := cur.Err(); err != nil {
 		loggerFatalErrors(err)
 	}
-	client.Disconnect(ctx)
-	cur.Close(ctx)
+
+	cur.Close(context.TODO())
 	return r
 }

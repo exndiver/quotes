@@ -20,22 +20,22 @@ func getCrypto() {
 	for _, v := range Config.Cryptoapilist {
 		resp, err := http.Get(v)
 		if err != nil {
-			loggerApi_errors("Error calling crypto api for %s" + v)
+			loggerAPIErrors("Error calling crypto api for %s" + v)
 			return
 		}
-		loggerApi("Was loaded successfully " + v)
+		loggerAPI("Was loaded successfully " + v)
 		body, err := ioutil.ReadAll(resp.Body)
 		if err != nil {
-			loggerApi_errors("Error getting responce body " + v)
+			loggerAPIErrors("Error getting responce body " + v)
 			return
 		}
 		if err := json.Unmarshal(body, &C); err != nil {
-			loggerApi_errors("Error parsing JSON for " + v)
+			loggerAPIErrors("Error parsing JSON for " + v)
 			return
 		}
 		var s, e = strconv.ParseFloat(C.Ticker["price"], 64)
 		if e != nil {
-			loggerApi_errors("Error parsing the price for " + v)
+			loggerAPIErrors("Error parsing the price for " + v)
 		}
 		var q = Quote{
 			Symbol:   C.Ticker["base"],
