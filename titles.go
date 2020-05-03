@@ -11,7 +11,7 @@ type title map[string]string
 type locale map[string]title
 
 func loadLocales() locale {
-	file, _ := os.Open("titles.json")
+	file, _ := os.Open("config/titles.json")
 	defer file.Close()
 	decoder := json.NewDecoder(file)
 	var l locale

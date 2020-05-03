@@ -12,25 +12,28 @@ type OpenExResponse struct {
 	Rates Quotes `json:"rates"`
 }
 
+// Quotes struct for each cur from api exch
+type Quotes map[string]float64
+
 func openexchangerates() {
 	var quotes OpenExResponse
 	resp, err := http.Get(Config.OpenExRateLink)
 	if err != nil {
-		Logger2Errors("Error importing from openexchangerates")
+		loggerApi_errors("Error importing from openexchangerates")
 		return
 	}
 
-	Logger2("Apiexchange is imported")
+	loggerApi("Apiexchange is imported")
 
 	defer resp.Body.Close()
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		Logger2Errors("Error parsing JSON openexchangerates.org")
+		loggerApi_errors("Error parsing JSON openexchangerates.org")
 		return
 	}
 	if err := json.Unmarshal(body, &quotes); err != nil {
-		Logger2Errors("Error parsing JSON openexchangerates.org")
+		loggerApi_errors("Error parsing JSON openexchangerates.org")
 		return
 	}
 	var u = 1 / quotes.Rates["EUR"]

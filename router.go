@@ -16,26 +16,26 @@ import (
 
 // DefaultPage - Very Default responce
 func DefaultPage(w http.ResponseWriter, r *http.Request) {
-	Logger1(r)
+	logger_access(r)
 	w.Write([]byte("OK! Nothing!\n"))
 }
 
 func avialibleCurrencies(w http.ResponseWriter, r *http.Request) {
-	Logger1(r)
+	logger_access(r)
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(responseAvialibleCurrencies())
 }
 
 func getRatesAPI(w http.ResponseWriter, r *http.Request) {
-	Logger1(r)
+	logger_access(r)
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(getRatesFromCache())
 }
 
 func getRatesBasedAPI(w http.ResponseWriter, r *http.Request) {
-	Logger1(r)
+	logger_access(r)
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Content-Type", "application/json")
 	vars := mux.Vars(r)
@@ -46,8 +46,10 @@ func getRatesBasedAPI(w http.ResponseWriter, r *http.Request) {
 	w.Write(getRatesBasedFromCache(groupID, vars["symbol"]))
 }
 
+// Method to get Titles from file config/titles.json
+// Example: /api/GetTitles/ru
 func getTitles(w http.ResponseWriter, r *http.Request) {
-	Logger1(r)
+	logger_access(r)
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	vars := mux.Vars(r)
@@ -55,7 +57,7 @@ func getTitles(w http.ResponseWriter, r *http.Request) {
 }
 
 func getHistoryMethod(w http.ResponseWriter, r *http.Request) {
-	Logger1(r)
+	logger_access(r)
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	vars := mux.Vars(r)
@@ -75,7 +77,7 @@ func getHistoryMethod(w http.ResponseWriter, r *http.Request) {
 
 func cachedHistory(duration string) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		Logger1(r)
+		logger_access(r)
 		w.Header().Set("Access-Control-Allow-Origin", "*")
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		content := storage.Get(r.RequestURI)
@@ -105,8 +107,10 @@ func cachedHistory(duration string) http.Handler {
 	})
 }
 
+// Method to POST Feedback
+// Example: /api/SendFeedback
 func postFeedback(w http.ResponseWriter, r *http.Request) {
-	Logger1(r)
+	logger_access(r)
 
 	if r.FormValue("message") != "" {
 		go pf(strings.Join(r.Header["X-Forwarded-For"], ","), r.FormValue("message"))
@@ -114,6 +118,7 @@ func postFeedback(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("OK!\n"))
 }
 
+// Post feedback
 func pf(c string, msg string) {
 	var message feedback.Message
 	message = googlesheet.NewFeedback(c, msg)

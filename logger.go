@@ -9,7 +9,7 @@ import (
 )
 
 // Logger1 - Access logs
-func Logger1(r *http.Request) {
+func logger_access(r *http.Request) {
 	f, err := os.OpenFile("./logs/logs.log", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
 	if err != nil {
 		log.Fatalf("error opening file: %v", err)
@@ -27,7 +27,7 @@ func Logger1(r *http.Request) {
 }
 
 // Logger1Errors - Errors logs for api request
-func Logger1Errors(str string) {
+func logger_access_errors(str string) {
 	f, err := os.OpenFile("./logs/logs.error.log", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
 	if err != nil {
 		log.Fatalf("error opening file: %v", err)
@@ -42,7 +42,7 @@ func Logger1Errors(str string) {
 }
 
 // Logger2 - Logger for requesting rates from external sources
-func Logger2(str string) {
+func loggerApi(str string) {
 	/*f, err := os.OpenFile("./logs/request_logs.log", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
 	if err != nil {
 		log.Fatalf("error opening file: %v", err)
@@ -57,13 +57,32 @@ func Logger2(str string) {
 }
 
 // Logger2Errors - errors for requesting rates from external sources
-func Logger2Errors(str string) {
+func loggerApi_errors(str string) {
 	f, err := os.OpenFile("./logs/request_logs.error.log", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
 	if err != nil {
 		log.Fatalf("error opening file: %v", err)
 	}
 	log.SetOutput(f)
 	log.Printf(
+		"%s\t%s\t",
+		time.Now(),
+		str,
+	)
+	f.Close()
+}
+
+func loggerFatalErrors(str error) {
+	f, err := os.OpenFile("./logs/fatal_logs.error.log", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+	if err != nil {
+		log.Fatalf("error opening file: %v", err)
+	}
+	log.SetOutput(f)
+	log.Printf(
+		"%s\t%s\t",
+		time.Now(),
+		str,
+	)
+	log.Fatal(
 		"%s\t%s\t",
 		time.Now(),
 		str,

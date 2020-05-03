@@ -13,6 +13,7 @@ type Conf struct {
 	Mongodb             string
 	AvialibleTypes      string
 	AvialibleList       map[string]string
+	DownloadRates       bool
 	Plugins             Plugins
 	DefaultLocale       string
 	Cryptoapilist       map[string]string
@@ -36,24 +37,17 @@ type CurrenciesType struct {
 
 // Plugins - which types should be used
 type Plugins struct {
-	Exchangeratesapi bool
-	Crypto           bool
-	Blrd             bool
-	Srb              bool
-	Ukr              bool
-	Kzt              bool
-	Azt              bool
-	Amd              bool
-	Gel              bool
-	OpenExRates      bool
+	Crypto      bool
+	OpenExRates bool
 }
 
 // getConfig - loading config file
 func getConfig() Conf {
-	file, _ := os.Open("config.json")
+	file, _ := os.Open("config/config.json")
 	defer file.Close()
 	decoder := json.NewDecoder(file)
 	var Config Conf
+	Config.DownloadRates = true
 	err := decoder.Decode(&Config)
 	if err != nil {
 		fmt.Println("error:", err)

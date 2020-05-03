@@ -14,7 +14,8 @@ func dbConnect() *mongo.Client {
 	client, err := mongo.NewClient(options.Client().ApplyURI(Config.Hosts.Mongodb))
 	ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
 	if err = client.Connect(ctx); err != nil {
-		log.Fatal(err)
+		//log.Fatal(err)
+		loggerFatalErrors(err)
 	}
 	return client
 }
@@ -25,7 +26,7 @@ func getAllElementsinMemory() {
 	ctx, _ := context.WithTimeout(context.Background(), 30*time.Second)
 	cur, err := collection.Find(ctx, bson.D{})
 	if err != nil {
-		log.Fatal(err)
+		loggerFatalErrors(err)
 	}
 	for cur.Next(ctx) {
 		var elem Quote
@@ -47,7 +48,7 @@ func getAllElementsinMemory() {
 		}
 	}
 	if err := cur.Err(); err != nil {
-		log.Fatal(err)
+		loggerFatalErrors(err)
 	}
 	client.Disconnect(ctx)
 	cur.Close(ctx)
@@ -64,18 +65,18 @@ func isElementInDB(currency Quote) bool {
 	ctx, _ := context.WithTimeout(context.Background(), 30*time.Second)
 	cur, err := collection.Find(ctx, filter)
 	if err != nil {
-		log.Fatal(err)
+		loggerFatalErrors(err)
 	}
 	for cur.Next(ctx) {
 		var elem Quote
 		err := cur.Decode(&elem)
 		if err != nil {
-			log.Fatal(err)
+			loggerFatalErrors(err)
 		}
 		result = append(result, &elem)
 	}
 	if err := cur.Err(); err != nil {
-		log.Fatal(err)
+		loggerFatalErrors(err)
 	}
 	client.Disconnect(ctx)
 	cur.Close(ctx)
@@ -100,7 +101,7 @@ func updateRate(currency Quote) {
 	ctx, _ := context.WithTimeout(context.Background(), 30*time.Second)
 	_, err := collection.UpdateOne(ctx, filter, update)
 	if err != nil {
-		log.Fatal(err)
+		loggerFatalErrors(err)
 	}
 	client.Disconnect(ctx)
 	writeHistory(currency)
@@ -112,7 +113,7 @@ func writeNewCurrency(currency Quote) {
 	collection := client.Database("Quotes").Collection("Currencies")
 	_, err := collection.InsertOne(ctx, currency)
 	if err != nil {
-		log.Fatal(err)
+		loggerFatalErrors(err)
 	}
 	client.Disconnect(ctx)
 	writeHistory(currency)
@@ -141,19 +142,19 @@ func writeHistory(currency Quote) {
 	ctx, _ := context.WithTimeout(context.Background(), 30*time.Second)
 	cur, err := collection.Find(ctx, filter)
 	if err != nil {
-		log.Fatal(err)
+		loggerFatalErrors(err)
 	}
 
 	for cur.Next(ctx) {
 		var elem HistoryQuote
 		err := cur.Decode(&elem)
 		if err != nil {
-			log.Fatal(err)
+			loggerFatalErrors(err)
 		}
 		result = append(result, &elem)
 	}
 	if err := cur.Err(); err != nil {
-		log.Fatal(err)
+		loggerFatalErrors(err)
 	}
 	client.Disconnect(ctx)
 	cur.Close(ctx)
@@ -181,7 +182,7 @@ func AddHistory(currency Quote) {
 	collection := client.Database("Quotes").Collection("History")
 	_, err := collection.InsertOne(ctx, h)
 	if err != nil {
-		log.Fatal(err)
+		loggerFatalErrors(err)
 	}
 	client.Disconnect(ctx)
 }
@@ -206,7 +207,7 @@ func Updatehistory(currency Quote) {
 	ctx, _ := context.WithTimeout(context.Background(), 30*time.Second)
 	_, err := collection.UpdateOne(ctx, filter, update)
 	if err != nil {
-		log.Fatal(err)
+		loggerFatalErrors(err)
 	}
 	client.Disconnect(ctx)
 }
@@ -226,19 +227,19 @@ func loadHistory(s string, c int, t int) map[string]float64 {
 	ctx, _ := context.WithTimeout(context.Background(), 30*time.Second)
 	cur, err := collection.Find(ctx, filter, options)
 	if err != nil {
-		log.Fatal(err)
+		loggerFatalErrors(err)
 	}
 
 	for cur.Next(ctx) {
 		var elem HistoryQuote
 		err := cur.Decode(&elem)
 		if err != nil {
-			log.Fatal(err)
+			loggerFatalErrors(err)
 		}
 		r[elem.Date.Format("2006-01-02")] = elem.Rate
 	}
 	if err := cur.Err(); err != nil {
-		log.Fatal(err)
+		loggerFatalErrors(err)
 	}
 	client.Disconnect(ctx)
 	cur.Close(ctx)

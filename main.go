@@ -49,37 +49,6 @@ func currencyTimer() {
 	nextTime := time.Now().Truncate(time.Hour * d)
 	nextTime = nextTime.Add(time.Hour * d)
 	// Check plugins and Update
-	if Config.Plugins.Exchangeratesapi {
-		exchangeratesapi()
-	}
-
-	if Config.Plugins.Blrd {
-		blrdRub()
-	}
-
-	if Config.Plugins.Srb {
-		SrbDinar()
-	}
-
-	if Config.Plugins.Ukr {
-		UkrUAH()
-	}
-
-	if Config.Plugins.Kzt {
-		KZT()
-	}
-
-	if Config.Plugins.Azt {
-		AZT()
-	}
-
-	if Config.Plugins.Amd {
-		AMD()
-	}
-
-	if Config.Plugins.Gel {
-		GEL()
-	}
 
 	if Config.Plugins.OpenExRates {
 		openexchangerates()
@@ -112,11 +81,15 @@ func main() {
 
 	storage = memory.NewStorage()
 
+	if Config.DownloadRates {
+		fmt.Printf("Downloading quotes..\n")
+		go currencyTimer()
+		go updateQuotesCryptocurrenciesInDB()
+	} else {
+		fmt.Printf("Downloading is swithced off..\n")
+	}
+
 	go reloadCurrenciesInMemory()
-
-	go currencyTimer()
-
-	go updateQuotesCryptocurrenciesInDB()
 
 	r := mux.NewRouter().StrictSlash(true)
 
