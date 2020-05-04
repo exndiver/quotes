@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"strconv"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -13,11 +14,11 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
+// dbConnect - opens the connection to the DB
 func dbConnect() *mongo.Client {
 	clientOptions := options.Client().ApplyURI(Config.Hosts.Mongodb)
 	client, err := mongo.Connect(context.TODO(), clientOptions)
 	if err != nil {
-		//log.Fatal(err)
 		loggerFatalErrors(err)
 	}
 	// Check the connection
@@ -279,4 +280,61 @@ func loadHistory(s string, c int, t int) map[string]float64 {
 
 	cur.Close(context.TODO())
 	return r
+}
+
+// Subscriptions
+
+func isSubscriptionInDB(s Subscription) bool {
+	var result []*Subscription
+	errPing := client.Ping(context.TODO(), nil)
+	if errPing != nil {
+		client = dbConnect()
+		loggerErrors("DB connection is lost")
+	}
+	collection := client.Database("Quotes").Collection("Subscriptions")
+	filter := bson.D{
+		primitive.E{Key: "deviceid", Value: s.DeviceID},
+		primitive.E{Key: "token", Value: s.Token},
+		primitive.E{Key: "type", Value: s.Type},
+		primitive.E{Key: "base", Value: s.Base},
+		primitive.E{Key: "currency", Value: s.Currency},
+		primitive.E{Key: "price", Value: s.Price},
+		primitive.E{Key: "condition", Value: s.Condition},
+	}
+	cur, err := collection.Find(context.TODO(), filter)
+	if err != nil {
+		loggerFatalErrors(err)
+	}
+	for cur.Next(context.TODO()) {
+		var elem Subscription
+		err := cur.Decode(&elem)
+		if err != nil {
+			loggerFatalErrors(err)
+		}
+		result = append(result, &elem)
+	}
+	if err := cur.Err(); err != nil {
+		loggerFatalErrors(err)
+	}
+	cur.Close(context.TODO())
+	if len(result) > 1 {
+		loggerErrors("Number of Subscriptions for " + s.Token + " is " + strconv.Itoa(len(result)))
+	}
+	if len(result) >= 1 {
+		return true
+	}
+	return false
+}
+
+func writeNewSubscription(s Subscription) {
+	errPing := client.Ping(context.TODO(), nil)
+	if errPing != nil {
+		client = dbConnect()
+		loggerErrors("DB connection is lost")
+	}
+	collection := client.Database("Quotes").Collection("Subscriptions")
+	_, err := collection.InsertOne(context.TODO(), s)
+	if err != nil {
+		loggerFatalErrors(err)
+	}
 }

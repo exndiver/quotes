@@ -1,0 +1,20 @@
+http://127.0.0.1:8083/api/GetRates/
+
+### Get rates with base: RUB, USD, EUR...
+http://127.0.0.1:8083//api/GetRates/0/RUB
+
+###Get titles
+http://127.0.0.1:8083//api/GetTitles/ru
+
+### Subscribe method
+POST http://127.0.0.1:8083/api/Subscribe HTTP/1.1
+Content-Type: application/json
+
+{
+  "token": "asdasda",
+  "type": "general",
+  "base": "EUR",
+  "currency": "USD",
+  "price": 1.09,
+  "condition": "below"
+}

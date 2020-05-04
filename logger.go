@@ -1,6 +1,8 @@
 package main
 
 import (
+	"encoding/json"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
@@ -97,5 +99,83 @@ func loggerErrors(str string) {
 		time.Now(),
 		str,
 	)
+	f.Close()
+}
+
+type jsonLog struct {
+	Version              string    `json:"version"`
+	Host                 string    `json:"host"`
+	Date                 time.Time `json:"_date"`
+	Level                int       `json:"level"`
+	Method               string    `json:"short_message"`
+	RequestURI           string    `json:"_requestURI"`
+	RequestHeaders       string    `json:"_RequestHeaders"`
+	Request              string    `json:"_request"`
+	RequestRemoteAddress string    `json:"_requestRemoteAddress"`
+	Response             string    `json:"_response"`
+	ResponseCode         int       `json:"_responseCode"`
+	Duration             int64     `json:"_duration"`
+}
+
+func emptyReqLogger(elapsed int64, m string) {
+	var l jsonLog
+	l.Duration = elapsed
+	l.Method = m
+	l.ResponseCode = 200
+	loggerJSON(l)
+}
+
+func reqLogger(r *http.Request, elapsed int64, m string) {
+	var l jsonLog
+	l.Duration = elapsed
+	l.Level = 1
+	l.Method = m
+	l.RequestURI = r.RequestURI
+	l.RequestRemoteAddress = r.RemoteAddr
+	reqBod, _ := ioutil.ReadAll(r.Body)
+	l.Request = string(reqBod)
+	reqH, _ := json.Marshal(r.Header)
+	l.RequestHeaders = string(reqH)
+	l.ResponseCode = 200
+	loggerJSON(l)
+}
+
+func reqRespLogger(r *http.Request, elapsed int64, m string, resp string, code int) {
+	var l jsonLog
+	l.Duration = elapsed
+	l.Level = 1
+	l.Method = m
+	l.RequestURI = r.RequestURI
+	l.RequestRemoteAddress = r.RemoteAddr
+	reqBod, _ := json.Marshal(r.Body)
+	l.Request = string(reqBod)
+	reqH, _ := json.Marshal(r.Header)
+	l.RequestHeaders = string(reqH)
+	l.Response = resp
+	l.ResponseCode = code
+	loggerJSON(l)
+}
+
+func loggerJSON(l jsonLog) {
+	l.Date = time.Now()
+	if l.Level == 0 {
+		l.Level = 1
+	}
+	if l.Version == "" {
+		l.Version = "1.1"
+	}
+	if l.Host == "" {
+		l.Host = "Quotes"
+	}
+	if l.ResponseCode == 0 {
+		l.ResponseCode = 200
+	}
+	f, err := os.OpenFile("./logs/logs.json", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+	if err != nil {
+		log.Fatalf("error opening file: %v", err)
+	}
+	data, _ := json.Marshal(l)
+
+	f.WriteString(string(data) + "\n")
 	f.Close()
 }

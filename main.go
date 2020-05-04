@@ -109,8 +109,13 @@ func main() {
 
 	r.HandleFunc("/api/SendFeedback", postFeedback).Methods("POST")
 
+	r.HandleFunc("/api/Subscribe", subscribe).Methods("POST")
+
+	r.HandleFunc("/api/UpdateSubscription", updateSubscription).Methods("POST")
+
 	fmt.Printf("Starting server...\n")
 
 	log.Print(http.ListenAndServe(Config.Hosts.Service, handlers.CORS(handlers.AllowedOrigins([]string{"*"}))(r)))
 
+	fmt.Printf("Server has been started...\n")
 }
