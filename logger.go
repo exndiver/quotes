@@ -2,60 +2,14 @@ package main
 
 import (
 	"encoding/json"
-	"io/ioutil"
 	"log"
-	"net/http"
 	"os"
-	"strings"
 	"time"
 )
 
-// Logger1 - Access logs
-func loggerAccess(r *http.Request) {
-	f, err := os.OpenFile("./logs/logs.log", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
-	if err != nil {
-		log.Fatalf("error opening file: %v", err)
-	}
-	log.SetOutput(f)
-	log.Printf(
-		"%s\t-\t%s\t%s\t%s\t%s\t",
-		strings.Join(r.Header["X-Forwarded-For"], ","),
-		r.Method,
-		r.RequestURI,
-		r.Header,
-		r.RemoteAddr,
-	)
-	f.Close()
-}
-
-// Logger1Errors - Errors logs for api request
-func loggerAccessErrors(str string) {
-	f, err := os.OpenFile("./logs/logs.error.log", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
-	if err != nil {
-		log.Fatalf("error opening file: %v", err)
-	}
-	log.SetOutput(f)
-	log.Printf(
-		"%s\t%s\t",
-		time.Now(),
-		str,
-	)
-	f.Close()
-}
-
 // Logger2 - Logger for requesting rates from external sources
 func loggerAPI(str string) {
-	/*f, err := os.OpenFile("./logs/request_logs.log", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
-	if err != nil {
-		log.Fatalf("error opening file: %v", err)
-	}
-	log.SetOutput(f)
-	log.Printf(
-		"%s\t%s\t",
-		time.Now(),
-		str,
-	)
-	f.Close()*/
+
 }
 
 // Logger2Errors - errors for requesting rates from external sources
@@ -117,6 +71,7 @@ type jsonLog struct {
 	Duration             int64     `json:"_duration"`
 }
 
+//Simple log
 func emptyReqLogger(elapsed int64, m string) {
 	var l jsonLog
 	l.Duration = elapsed
@@ -125,41 +80,11 @@ func emptyReqLogger(elapsed int64, m string) {
 	loggerJSON(l)
 }
 
-func reqLogger(r *http.Request, elapsed int64, m string) {
-	var l jsonLog
-	l.Duration = elapsed
-	l.Level = 1
-	l.Method = m
-	l.RequestURI = r.RequestURI
-	l.RequestRemoteAddress = r.RemoteAddr
-	reqBod, _ := ioutil.ReadAll(r.Body)
-	l.Request = string(reqBod)
-	reqH, _ := json.Marshal(r.Header)
-	l.RequestHeaders = string(reqH)
-	l.ResponseCode = 200
-	loggerJSON(l)
-}
-
-func reqRespLogger(r *http.Request, elapsed int64, m string, resp string, code int) {
-	var l jsonLog
-	l.Duration = elapsed
-	l.Level = 1
-	l.Method = m
-	l.RequestURI = r.RequestURI
-	l.RequestRemoteAddress = r.RemoteAddr
-	reqBod, _ := json.Marshal(r.Body)
-	l.Request = string(reqBod)
-	reqH, _ := json.Marshal(r.Header)
-	l.RequestHeaders = string(reqH)
-	l.Response = resp
-	l.ResponseCode = code
-	loggerJSON(l)
-}
-
+//Log Data to json file
 func loggerJSON(l jsonLog) {
 	l.Date = time.Now()
 	if l.Level == 0 {
-		l.Level = 1
+		l.Level = 6
 	}
 	if l.Version == "" {
 		l.Version = "1.1"
@@ -175,7 +100,6 @@ func loggerJSON(l jsonLog) {
 		log.Fatalf("error opening file: %v", err)
 	}
 	data, _ := json.Marshal(l)
-
 	f.WriteString(string(data) + "\n")
 	f.Close()
 }

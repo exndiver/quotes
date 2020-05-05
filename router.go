@@ -15,158 +15,182 @@ import (
 	"github.com/gorilla/mux"
 )
 
-// DefaultPage - Very Default responce
-func DefaultPage(w http.ResponseWriter, r *http.Request) {
-	start := time.Now()
-	loggerAccess(r)
-	w.Write([]byte("OK! Nothing!\n"))
-	elapsed := int64(time.Since(start) / time.Millisecond)
-	go reqLogger(r, elapsed, "Default")
+func logger(endpoint func(http.ResponseWriter, *http.Request) (int, string, int, string, string)) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		start := time.Now()
+
+		code, mn, level, resp, reqBod := endpoint(w, r)
+
+		elapsed := int64(time.Since(start) / time.Millisecond)
+
+		var l jsonLog
+		l.Duration = elapsed
+		l.Level = level
+		l.Method = mn
+		l.RequestURI = r.RequestURI
+
+		ip := r.RemoteAddr
+		if r.Header["X-Forwarded-For"] != nil {
+			ip = r.Header["X-Forwarded-For"][0]
+		}
+		//l.RequestRemoteAddress = r.RemoteAddr
+		l.RequestRemoteAddress = ip
+		l.Request = string(reqBod)
+		reqH, _ := json.Marshal(r.Header)
+		l.RequestHeaders = string(reqH)
+		l.Response = resp
+		l.ResponseCode = code
+
+		loggerJSON(l)
+	})
 }
 
-func avialibleCurrencies(w http.ResponseWriter, r *http.Request) {
-	loggerAccess(r)
+// DefaultPage - Very Default responce
+func DefaultPage(w http.ResponseWriter, r *http.Request) (int, string, int, string, string) {
+	mn := "Default"
+	level := 6
+	code := http.StatusOK
+	resp := []byte("Hello!")
+	rbody := ""
+	w.WriteHeader(code)
+	w.Write(resp)
+	return code, mn, level, string(resp), rbody
+}
+
+func avialibleCurrencies(w http.ResponseWriter, r *http.Request) (int, string, int, string, string) {
+	mn := "GetAvialibleCurrencies"
+	level := 6
+	code := http.StatusOK
+	resp := responseAvialibleCurrencies()
+	rbody := ""
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Content-Type", "application/json")
-	w.Write(responseAvialibleCurrencies())
+	w.Write(resp)
+	return code, mn, level, string(resp), rbody
 }
 
 // Method to get all Rates with EUR Base
 // Example: /api/GetRates
-func getRatesAPI(w http.ResponseWriter, r *http.Request) {
-	start := time.Now()
-	loggerAccess(r)
+func getRatesAPI(w http.ResponseWriter, r *http.Request) (int, string, int, string, string) {
+	mn := "GetRates"
+	level := 6
+	code := http.StatusOK
+	rbody := ""
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Content-Type", "application/json")
 	resp := getRatesFromCache()
 	w.Write(resp)
-	elapsed := int64(time.Since(start) / time.Millisecond)
-	go reqLogger(r, elapsed, "GetRates")
+	return code, mn, level, string(resp), rbody
 }
 
 // Method to get Rates with Base Currency
 // Example: /api/GetRates/0/USD
-func getRatesBasedAPI(w http.ResponseWriter, r *http.Request) {
-	start := time.Now()
-	loggerAccess(r)
+func getRatesBasedAPI(w http.ResponseWriter, r *http.Request) (int, string, int, string, string) {
+	mn := "GetRatesBased"
+	level := 6
+	code := http.StatusOK
+	rbody := ""
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Content-Type", "application/json")
 	vars := mux.Vars(r)
 	groupID, err := strconv.Atoi(vars["groupID"])
 	if err != nil {
-		w.WriteHeader(http.StatusNotFound)
-		w.Write([]byte("OK! Nothing!\n"))
-		elapsed := int64(time.Since(start) / time.Millisecond)
-		go reqRespLogger(r, elapsed, "GetRatesBased", "OK! Nothing!", http.StatusNotFound)
-		return
+		code = http.StatusNotFound
+		level = 4
+		resp := []byte("Not Found")
+		w.WriteHeader(code)
+		w.Write(resp)
+		return code, mn, level, string(resp), rbody
 	}
-	w.Write(getRatesBasedFromCache(groupID, vars["symbol"]))
-	elapsed := int64(time.Since(start) / time.Millisecond)
-	go reqLogger(r, elapsed, "GetRatesBased")
+	resp := getRatesBasedFromCache(groupID, vars["symbol"])
+	w.Write(resp)
+	return code, mn, level, string(resp), rbody
 }
 
 // Method to get Titles from file config/titles.json
 // Example: /api/GetTitles/ru
-func getTitles(w http.ResponseWriter, r *http.Request) {
-	start := time.Now()
-	loggerAccess(r)
+func getTitles(w http.ResponseWriter, r *http.Request) (int, string, int, string, string) {
+	mn := "GetTitles"
+	level := 6
+	code := http.StatusOK
+	rbody := ""
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	vars := mux.Vars(r)
-	w.Write(getLocale(vars["locale"]))
-	elapsed := int64(time.Since(start) / time.Millisecond)
-	go reqRespLogger(r, elapsed, "getTitles", vars["locale"], 200)
+	resp := getLocale(vars["locale"])
+	w.Write(resp)
+	return code, mn, level, string(resp), rbody
 }
 
-func getHistoryMethod(w http.ResponseWriter, r *http.Request) {
-	start := time.Now()
-	loggerAccess(r)
+//GetHistory method
+// Ecample /api/GetHistory/30/0/RUB
+func getHistoryCache(w http.ResponseWriter, r *http.Request) (int, string, int, string, string) {
+	mn := "GetHistory"
+	level := 6
+	code := http.StatusOK
+	rbody := ""
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	resp := storage.Get(r.RequestURI)
+	if resp != nil {
+		w.Write(resp)
+		mn := "GetHistoryCached"
+		return code, mn, level, string(resp), rbody
+	}
+	resp, status := getHistoryFromDB(r)
+	if !status {
+		code := http.StatusNotAcceptable
+		w.WriteHeader(code)
+		level = 4
+	}
+	w.Write(resp)
+	mn = "GetHistoryDB"
+	return code, mn, level, string(resp), rbody
+}
+
+func getHistoryFromDB(r *http.Request) ([]byte, bool) {
 	vars := mux.Vars(r)
 	d, err := strconv.Atoi(vars["d"])
 	if d < 1 {
 		d = 1
 	}
 	if err != nil {
-		w.WriteHeader(http.StatusNotFound)
-		w.Write([]byte("OK! Nothing!\n"))
-		elapsed := int64(time.Since(start) / time.Millisecond)
-		go reqRespLogger(r, elapsed, "getHistory", vars["d"]+" - Param is wrong", http.StatusNotFound)
-		return
+		resp := []byte("Days param is wrong")
+		return resp, false
 	}
 	c, err := strconv.Atoi(vars["c"])
 	if err != nil {
-		w.WriteHeader(http.StatusNotFound)
-		w.Write([]byte("OK! Nothing!\n"))
-		elapsed := int64(time.Since(start) / time.Millisecond)
-		go reqRespLogger(r, elapsed, "getHistory", vars["c"]+" - Param is wrong", http.StatusNotFound)
-		return
+		resp := []byte("Category param is wrong")
+		return resp, false
 	}
-	w.Write(getHistory(vars["s"], c, d))
-	elapsed := int64(time.Since(start) / time.Millisecond)
-	go reqRespLogger(r, elapsed, "getHistory", vars["s"], 200)
-}
-
-func cachedHistory(duration string) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		start := time.Now()
-		loggerAccess(r)
-		w.Header().Set("Access-Control-Allow-Origin", "*")
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		content := storage.Get(r.RequestURI)
-		if content != nil {
-			w.Write(content)
-		} else {
-			vars := mux.Vars(r)
-			d, err := strconv.Atoi(vars["d"])
-			if d < 1 {
-				d = 1
-			}
-			if err != nil {
-				w.WriteHeader(http.StatusNotFound)
-				w.Write([]byte("OK! Nothing!\n"))
-				elapsed := int64(time.Since(start) / time.Millisecond)
-				go reqRespLogger(r, elapsed, "cachedHistory", vars["d"]+" - Param is wrong", http.StatusNotFound)
-				return
-			}
-			c, err := strconv.Atoi(vars["c"])
-			if err != nil {
-				w.WriteHeader(http.StatusNotFound)
-				w.Write([]byte("OK! Nothing!\n"))
-				elapsed := int64(time.Since(start) / time.Millisecond)
-				go reqRespLogger(r, elapsed, "cachedHistory", vars["c"]+" - Param is wrong", http.StatusNotFound)
-				return
-			}
-			content = getHistory(vars["s"], c, d)
-			if d, err := time.ParseDuration(duration); err == nil {
-				storage.Set(r.RequestURI, content, d)
-			} else {
-				fmt.Printf("Page not cached. err: %s\n", err)
-			}
-			w.Write(content)
-			elapsed := int64(time.Since(start) / time.Millisecond)
-			go reqRespLogger(r, elapsed, "cachedHistory", vars["s"], 200)
-		}
-	})
+	resp := getHistory(vars["s"], c, d)
+	if d, err := time.ParseDuration(Config.CacheDuration); err == nil {
+		storage.Set(r.RequestURI, resp, d)
+	} else {
+		// Todo: error logs must be added
+		fmt.Printf("Page not cached. err: %s\n", err)
+	}
+	return resp, true
 }
 
 // Method to POST Feedback
 // Example: /api/SendFeedback
-func postFeedback(w http.ResponseWriter, r *http.Request) {
-	start := time.Now()
-	loggerAccess(r)
-
+func postFeedback(w http.ResponseWriter, r *http.Request) (int, string, int, string, string) {
+	mn := "postFeedbackRequest"
+	level := 6
+	code := http.StatusOK
+	resp := []byte("Sent!")
+	rbody := r.FormValue("message")
 	if r.FormValue("message") != "" {
-		go pf(strings.Join(r.Header["X-Forwarded-For"], ","), r.FormValue("message"))
+		go pf(strings.Join(r.Header["X-Forwarded-For"], ","), rbody)
 	}
-	w.Write([]byte("OK!\n"))
-	elapsed := int64(time.Since(start) / time.Millisecond)
-	go reqLogger(r, elapsed, "postFeedbackRequest")
+	w.Write(resp)
+	return code, mn, level, string(resp), rbody
 }
 
 // Post feedback
 func pf(c string, msg string) {
+	// TODO: Default logs
 	start := time.Now()
 	var message feedback.Message
 	message = googlesheet.NewFeedback(c, msg)
@@ -176,43 +200,47 @@ func pf(c string, msg string) {
 }
 
 // Subcribe for push msg
-func subscribe(w http.ResponseWriter, r *http.Request) {
-	start := time.Now()
-	loggerAccess(r)
+func subscribe(w http.ResponseWriter, r *http.Request) (int, string, int, string, string) {
+	mn := "Subscribe"
+	level := 6
+	code := http.StatusOK
+	resp := []byte("Done")
 	var s Subscription
 	s.Lang = "en"
-	r2 := r
 	_ = json.NewDecoder(r.Body).Decode(&s)
-	fmt.Printf("%s", s.Token)
+	rbodyB, _ := json.Marshal(s)
+	rbody := string(rbodyB)
 	if (s.Token != "") && (ValidType(s.Type)) && (s.DeviceID != "") {
-		w.Write([]byte("OK!\n"))
+		w.Write(resp)
 		putSubscription(s)
-		elapsed := int64(time.Since(start) / time.Millisecond)
-		go reqLogger(r, elapsed, "Subscribe")
-		return
+	} else {
+		level = 4
+		code = http.StatusForbidden
+		resp = []byte("Forbidden")
+		w.WriteHeader(code)
+		w.Write(resp)
 	}
-	w.WriteHeader(http.StatusForbidden)
-	w.Write([]byte("Error!\n"))
-	elapsed := int64(time.Since(start) / time.Millisecond)
-	go reqRespLogger(r2, elapsed, "Subscribe", "Error", http.StatusForbidden)
+	return code, mn, level, string(resp), rbody
 }
 
 // Update device token for push msg
-func updateSubscription(w http.ResponseWriter, r *http.Request) {
-	start := time.Now()
-	loggerAccess(r)
-
+func updateSubscription(w http.ResponseWriter, r *http.Request) (int, string, int, string, string) {
+	mn := "updateSubscription"
+	level := 6
+	rbody := ""
+	code := http.StatusOK
+	resp := []byte("OK")
 	var s Subscription
 	_ = json.NewDecoder(r.Body).Decode(&s)
 	if (s.Token != "") && (s.DeviceID != "") {
-		w.Write([]byte("OK!\n"))
+		w.Write(resp)
 		updSub(s)
-		elapsed := int64(time.Since(start) / time.Millisecond)
-		go reqLogger(r, elapsed, "updateSubscription")
-		return
+	} else {
+		level = 4
+		code = http.StatusForbidden
+		resp = []byte("Forbidden")
+		w.WriteHeader(code)
+		w.Write(resp)
 	}
-	w.WriteHeader(http.StatusForbidden)
-	w.Write([]byte("Error!\n"))
-	elapsed := int64(time.Since(start) / time.Millisecond)
-	go reqRespLogger(r, elapsed, "updateSubscription", "Error", http.StatusForbidden)
+	return code, mn, level, string(resp), rbody
 }

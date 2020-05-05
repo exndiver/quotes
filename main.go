@@ -95,23 +95,23 @@ func main() {
 
 	r := mux.NewRouter().StrictSlash(true)
 
-	r.HandleFunc("/", DefaultPage).Methods("GET")
+	r.Handle("/", logger(DefaultPage)).Methods("GET")
 
-	r.HandleFunc("/api/GetAvialibleCurrencies/", avialibleCurrencies).Methods("GET")
+	r.Handle("/api/GetAvialibleCurrencies/", logger(avialibleCurrencies)).Methods("GET")
 
-	r.HandleFunc("/api/GetRates/", getRatesAPI).Methods("GET")
+	r.Handle("/api/GetRates/", logger(getRatesAPI)).Methods("GET")
 
-	r.HandleFunc("/api/GetRates/{groupID}/{symbol}", getRatesBasedAPI).Methods("GET")
+	r.Handle("/api/GetRates/{groupID}/{symbol}", logger(getRatesBasedAPI)).Methods("GET")
 
-	r.HandleFunc("/api/GetTitles/{locale}/", getTitles).Methods("GET")
+	r.Handle("/api/GetTitles/{locale}/", logger(getTitles)).Methods("GET")
 
-	r.Handle("/api/GetHistory/{d}/{c}/{s}", cachedHistory("3h")).Methods("GET")
+	r.Handle("/api/GetHistory/{d}/{c}/{s}", logger(getHistoryCache)).Methods("GET")
 
-	r.HandleFunc("/api/SendFeedback", postFeedback).Methods("POST")
+	r.Handle("/api/SendFeedback", logger(postFeedback)).Methods("POST")
 
-	r.HandleFunc("/api/Subscribe", subscribe).Methods("POST")
+	r.Handle("/api/Subscribe", logger(subscribe)).Methods("POST")
 
-	r.HandleFunc("/api/UpdateSubscription", updateSubscription).Methods("POST")
+	r.Handle("/api/UpdateSubscription", logger(updateSubscription)).Methods("POST")
 
 	fmt.Printf("Starting server...\n")
 

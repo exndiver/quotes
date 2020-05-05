@@ -22,6 +22,7 @@ type Conf struct {
 	OpenExRateLink      string
 	Feedback            string
 	Proxy               bool
+	CacheDuration       string
 }
 
 // Hosts - hosts configurations
@@ -48,6 +49,7 @@ func getConfig() Conf {
 	decoder := json.NewDecoder(file)
 	var Config Conf
 	Config.DownloadRates = true
+	Config.CacheDuration = "3h"
 	err := decoder.Decode(&Config)
 	if err != nil {
 		fmt.Println("error:", err)

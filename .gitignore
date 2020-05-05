@@ -15,3 +15,5 @@ credentials.json
 token.json
 *.log
 logs
+tests*
+test
