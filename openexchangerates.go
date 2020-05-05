@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"strings"
+	"time"
 )
 
 // OpenExResponse - response from openexachangerates api
@@ -16,24 +17,26 @@ type OpenExResponse struct {
 type Quotes map[string]float64
 
 func openexchangerates() {
+	start := time.Now()
 	var quotes OpenExResponse
 	resp, err := http.Get(Config.OpenExRateLink)
 	if err != nil {
-		loggerAPIErrors("Error importing from openexchangerates")
+		d := int64(time.Since(start) / time.Millisecond)
+		logEvent(4, "loadOpenExchangerates", 500, "Error importing from openexchangerates", d)
 		return
 	}
-
-	loggerAPI("Apiexchange is imported")
 
 	defer resp.Body.Close()
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		loggerAPIErrors("Error parsing JSON openexchangerates.org")
+		d := int64(time.Since(start) / time.Millisecond)
+		logEvent(4, "loadOpenExchangerates", 500, "Error parsing JSON openexchangerates.org", d)
 		return
 	}
 	if err := json.Unmarshal(body, &quotes); err != nil {
-		loggerAPIErrors("Error parsing JSON openexchangerates.org")
+		d := int64(time.Since(start) / time.Millisecond)
+		logEvent(4, "loadOpenExchangerates", 500, "Error parsing JSON openexchangerates.org", d)
 		return
 	}
 	var u = 1 / quotes.Rates["EUR"]
@@ -79,4 +82,6 @@ func openexchangerates() {
 			writeNewCurrency(str)
 		}
 	}
+	d := int64(time.Since(start) / time.Millisecond)
+	logEvent(6, "loadOpenExchangerates", 200, "Was loaded successfully", d)
 }

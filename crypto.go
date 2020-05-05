@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"strconv"
+	"time"
 )
 
 // CrypResp - responce from crypto source
@@ -18,24 +19,29 @@ type Cryp map[string]string
 func getCrypto() {
 	var C CrypResp
 	for _, v := range Config.Cryptoapilist {
+		start := time.Now()
 		resp, err := http.Get(v)
 		if err != nil {
-			loggerAPIErrors("Error calling crypto api for %s" + v)
+			d := int64(time.Since(start) / time.Millisecond)
+			logEvent(4, "loadCrypto", 500, "Error calling crypto api for"+v, d)
 			return
 		}
-		loggerAPI("Was loaded successfully " + v)
 		body, err := ioutil.ReadAll(resp.Body)
 		if err != nil {
-			loggerAPIErrors("Error getting responce body " + v)
+			d := int64(time.Since(start) / time.Millisecond)
+			logEvent(4, "loadCrypto", 500, "Error getting responce body"+v, d)
 			return
 		}
 		if err := json.Unmarshal(body, &C); err != nil {
-			loggerAPIErrors("Error parsing JSON for " + v)
+			d := int64(time.Since(start) / time.Millisecond)
+			logEvent(4, "loadCrypto", 500, "Error parsing JSON for"+v, d)
 			return
 		}
 		var s, e = strconv.ParseFloat(C.Ticker["price"], 64)
 		if e != nil {
-			loggerAPIErrors("Error parsing the price for " + v)
+			d := int64(time.Since(start) / time.Millisecond)
+			logEvent(4, "loadCrypto", 500, "Error parsing the price for"+v, d)
+			return
 		}
 		var q = Quote{
 			Symbol:   C.Ticker["base"],
@@ -47,5 +53,7 @@ func getCrypto() {
 		} else {
 			writeNewCurrency(q)
 		}
+		d := int64(time.Since(start) / time.Millisecond)
+		logEvent(6, "loadCrypto", 200, "Was loaded successfully"+v, d)
 	}
 }

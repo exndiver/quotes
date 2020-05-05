@@ -19,13 +19,15 @@ func dbConnect() *mongo.Client {
 	clientOptions := options.Client().ApplyURI(Config.Hosts.Mongodb)
 	client, err := mongo.Connect(context.TODO(), clientOptions)
 	if err != nil {
-		loggerFatalErrors(err)
+		logError("DB problem!", err.Error(), 2)
+		log.Fatalf("DB problem!")
 	}
 	// Check the connection
 	err = client.Ping(context.TODO(), nil)
 
 	if err != nil {
-		loggerFatalErrors(err)
+		logError("DB problem!", err.Error(), 2)
+		log.Fatalf("DB problem!")
 	}
 
 	fmt.Println("Connected to MongoDB!")
@@ -36,12 +38,13 @@ func getAllElementsinMemory() {
 	errPing := client.Ping(context.TODO(), nil)
 	if errPing != nil {
 		client = dbConnect()
-		loggerErrors("DB connection is lost")
+		fmt.Println("DB connection is lost")
 	}
 	collection := client.Database("Quotes").Collection("Currencies")
 	cur, err := collection.Find(context.TODO(), bson.D{})
 	if err != nil {
-		loggerFatalErrors(err)
+		logError("DB problem!", err.Error(), 2)
+		log.Fatalf("DB problem!")
 	}
 	for cur.Next(context.TODO()) {
 		var elem Quote
@@ -63,7 +66,8 @@ func getAllElementsinMemory() {
 		}
 	}
 	if err := cur.Err(); err != nil {
-		loggerFatalErrors(err)
+		logError("DB problem!", err.Error(), 2)
+		log.Fatalf("DB problem!")
 	}
 
 	cur.Close(context.TODO())
@@ -74,7 +78,7 @@ func isElementInDB(currency Quote) bool {
 	errPing := client.Ping(context.TODO(), nil)
 	if errPing != nil {
 		client = dbConnect()
-		loggerErrors("DB connection is lost")
+		fmt.Println("DB connection is lost")
 	}
 	collection := client.Database("Quotes").Collection("Currencies")
 	filter := bson.D{
@@ -83,18 +87,21 @@ func isElementInDB(currency Quote) bool {
 	}
 	cur, err := collection.Find(context.TODO(), filter)
 	if err != nil {
-		loggerFatalErrors(err)
+		logError("DB problem!", err.Error(), 2)
+		log.Fatalf("DB problem!")
 	}
 	for cur.Next(context.TODO()) {
 		var elem Quote
 		err := cur.Decode(&elem)
 		if err != nil {
-			loggerFatalErrors(err)
+			logError("DB problem!", err.Error(), 2)
+			log.Fatalf("DB problem!")
 		}
 		result = append(result, &elem)
 	}
 	if err := cur.Err(); err != nil {
-		loggerFatalErrors(err)
+		logError("DB problem!", err.Error(), 2)
+		log.Fatalf("DB problem!")
 	}
 
 	cur.Close(context.TODO())
@@ -108,7 +115,7 @@ func updateRate(currency Quote) {
 	errPing := client.Ping(context.TODO(), nil)
 	if errPing != nil {
 		client = dbConnect()
-		loggerErrors("DB connection is lost")
+		fmt.Println("DB connection is lost")
 	}
 	collection := client.Database("Quotes").Collection("Currencies")
 	filter := bson.D{
@@ -122,7 +129,8 @@ func updateRate(currency Quote) {
 	}
 	_, err := collection.UpdateOne(context.TODO(), filter, update)
 	if err != nil {
-		loggerFatalErrors(err)
+		logError("DB problem!", err.Error(), 2)
+		log.Fatalf("DB problem!")
 	}
 
 	writeHistory(currency)
@@ -132,12 +140,13 @@ func writeNewCurrency(currency Quote) {
 	errPing := client.Ping(context.TODO(), nil)
 	if errPing != nil {
 		client = dbConnect()
-		loggerErrors("DB connection is lost")
+		fmt.Println("DB connection is lost")
 	}
 	collection := client.Database("Quotes").Collection("Currencies")
 	_, err := collection.InsertOne(context.TODO(), currency)
 	if err != nil {
-		loggerFatalErrors(err)
+		logError("DB problem!", err.Error(), 2)
+		log.Fatalf("DB problem!")
 	}
 
 	writeHistory(currency)
@@ -158,7 +167,7 @@ func writeHistory(currency Quote) {
 	errPing := client.Ping(context.TODO(), nil)
 	if errPing != nil {
 		client = dbConnect()
-		loggerErrors("DB connection is lost")
+		fmt.Println("DB connection is lost")
 	}
 	collection := client.Database("Quotes").Collection("History")
 	filter := bson.D{
@@ -169,19 +178,22 @@ func writeHistory(currency Quote) {
 
 	cur, err := collection.Find(context.TODO(), filter)
 	if err != nil {
-		loggerFatalErrors(err)
+		logError("DB problem!", err.Error(), 2)
+		log.Fatalf("DB problem!")
 	}
 
 	for cur.Next(context.TODO()) {
 		var elem HistoryQuote
 		err := cur.Decode(&elem)
 		if err != nil {
-			loggerFatalErrors(err)
+			logError("DB problem!", err.Error(), 2)
+			log.Fatalf("DB problem!")
 		}
 		result = append(result, &elem)
 	}
 	if err := cur.Err(); err != nil {
-		loggerFatalErrors(err)
+		logError("DB problem!", err.Error(), 2)
+		log.Fatalf("DB problem!")
 	}
 
 	cur.Close(context.TODO())
@@ -200,7 +212,7 @@ func AddHistory(currency Quote) {
 	errPing := client.Ping(context.TODO(), nil)
 	if errPing != nil {
 		client = dbConnect()
-		loggerErrors("DB connection is lost")
+		fmt.Println("DB connection is lost")
 	}
 	var h HistoryQuote
 	h.Category = currency.Category
@@ -212,7 +224,8 @@ func AddHistory(currency Quote) {
 	collection := client.Database("Quotes").Collection("History")
 	_, err := collection.InsertOne(context.TODO(), h)
 	if err != nil {
-		loggerFatalErrors(err)
+		logError("DB problem!", err.Error(), 2)
+		log.Fatalf("DB problem!")
 	}
 
 }
@@ -225,7 +238,7 @@ func Updatehistory(currency Quote) {
 	errPing := client.Ping(context.TODO(), nil)
 	if errPing != nil {
 		client = dbConnect()
-		loggerErrors("DB connection is lost")
+		fmt.Println("DB connection is lost")
 	}
 	collection := client.Database("Quotes").Collection("History")
 	filter := bson.D{
@@ -240,7 +253,8 @@ func Updatehistory(currency Quote) {
 	}
 	_, err := collection.UpdateOne(context.TODO(), filter, update)
 	if err != nil {
-		loggerFatalErrors(err)
+		logError("DB problem!", err.Error(), 2)
+		log.Fatalf("DB problem!")
 	}
 
 }
@@ -251,7 +265,7 @@ func loadHistory(s string, c int, t int) map[string]float64 {
 	errPing := client.Ping(context.TODO(), nil)
 	if errPing != nil {
 		client = dbConnect()
-		loggerErrors("DB connection is lost")
+		fmt.Println("DB connection is lost")
 	}
 	collection := client.Database("Quotes").Collection("History")
 	filter := bson.D{
@@ -263,19 +277,22 @@ func loadHistory(s string, c int, t int) map[string]float64 {
 	options.SetSort(bson.D{primitive.E{Key: "date", Value: -1}})
 	cur, err := collection.Find(context.TODO(), filter, options)
 	if err != nil {
-		loggerFatalErrors(err)
+		logError("DB problem!", err.Error(), 2)
+		log.Fatalf("DB problem!")
 	}
 
 	for cur.Next(context.TODO()) {
 		var elem HistoryQuote
 		err := cur.Decode(&elem)
 		if err != nil {
-			loggerFatalErrors(err)
+			logError("DB problem!", err.Error(), 2)
+			log.Fatalf("DB problem!")
 		}
 		r[elem.Date.Format("2006-01-02")] = elem.Rate
 	}
 	if err := cur.Err(); err != nil {
-		loggerFatalErrors(err)
+		logError("DB problem!", err.Error(), 2)
+		log.Fatalf("DB problem!")
 	}
 
 	cur.Close(context.TODO())
@@ -289,7 +306,7 @@ func isSubscriptionInDB(s Subscription) bool {
 	errPing := client.Ping(context.TODO(), nil)
 	if errPing != nil {
 		client = dbConnect()
-		loggerErrors("DB connection is lost")
+		fmt.Println("DB connection is lost")
 	}
 	collection := client.Database("Quotes").Collection("Subscriptions")
 	filter := bson.D{
@@ -303,22 +320,25 @@ func isSubscriptionInDB(s Subscription) bool {
 	}
 	cur, err := collection.Find(context.TODO(), filter)
 	if err != nil {
-		loggerFatalErrors(err)
+		logError("DB problem!", err.Error(), 2)
+		log.Fatalf("DB problem!")
 	}
 	for cur.Next(context.TODO()) {
 		var elem Subscription
 		err := cur.Decode(&elem)
 		if err != nil {
-			loggerFatalErrors(err)
+			logError("DB problem!", err.Error(), 2)
+			log.Fatalf("DB problem!")
 		}
 		result = append(result, &elem)
 	}
 	if err := cur.Err(); err != nil {
-		loggerFatalErrors(err)
+		logError("DB problem!", err.Error(), 2)
+		log.Fatalf("DB problem!")
 	}
 	cur.Close(context.TODO())
 	if len(result) > 1 {
-		loggerErrors("Number of Subscriptions for " + s.Token + " is " + strconv.Itoa(len(result)))
+		logError("Too many tokens", "Number of Subscriptions for "+s.Token+" is "+strconv.Itoa(len(result)), 4)
 	}
 	if len(result) >= 1 {
 		return true
@@ -330,11 +350,12 @@ func writeNewSubscription(s Subscription) {
 	errPing := client.Ping(context.TODO(), nil)
 	if errPing != nil {
 		client = dbConnect()
-		loggerErrors("DB connection is lost")
+		fmt.Println("DB connection is lost")
 	}
 	collection := client.Database("Quotes").Collection("Subscriptions")
 	_, err := collection.InsertOne(context.TODO(), s)
 	if err != nil {
-		loggerFatalErrors(err)
+		logError("DB problem!", err.Error(), 2)
+		log.Fatalf("DB problem!")
 	}
 }

@@ -7,55 +7,6 @@ import (
 	"time"
 )
 
-// Logger2 - Logger for requesting rates from external sources
-func loggerAPI(str string) {
-
-}
-
-// Logger2Errors - errors for requesting rates from external sources
-func loggerAPIErrors(str string) {
-	f, err := os.OpenFile("./logs/request_logs.error.log", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
-	if err != nil {
-		log.Fatalf("error opening file: %v", err)
-	}
-	log.SetOutput(f)
-	log.Printf(
-		"%s\t%s\t",
-		time.Now(),
-		str,
-	)
-	f.Close()
-}
-
-func loggerFatalErrors(str error) {
-	f, err := os.OpenFile("./logs/fatal_logs.error.log", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
-	if err != nil {
-		log.Fatalf("error opening file: %v", err)
-	}
-	log.SetOutput(f)
-	log.Printf(
-		"%s\t%s\t",
-		time.Now(),
-		str,
-	)
-	log.Fatal(time.Now(), " - ", str)
-	f.Close()
-}
-
-func loggerErrors(str string) {
-	f, err := os.OpenFile("./logs/error.log", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
-	if err != nil {
-		log.Fatalf("error opening file: %v", err)
-	}
-	log.SetOutput(f)
-	log.Printf(
-		"%s\t%s\t",
-		time.Now(),
-		str,
-	)
-	f.Close()
-}
-
 type jsonLog struct {
 	Version              string    `json:"version"`
 	Host                 string    `json:"host"`
@@ -72,11 +23,23 @@ type jsonLog struct {
 }
 
 //Simple log
-func emptyReqLogger(elapsed int64, m string) {
+func logEvent(lv int, m string, rc int, r string, d int64) {
 	var l jsonLog
-	l.Duration = elapsed
+	l.Level = lv
 	l.Method = m
-	l.ResponseCode = 200
+	l.ResponseCode = rc
+	l.Response = r
+	l.Duration = d
+	loggerJSON(l)
+}
+
+func logError(m string, r string, lv int) {
+	var l jsonLog
+	l.Level = lv
+	l.Method = m
+	l.ResponseCode = 0
+	l.Response = r
+	l.Duration = 0
 	loggerJSON(l)
 }
 

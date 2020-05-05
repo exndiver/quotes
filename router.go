@@ -11,7 +11,6 @@ import (
 	"github.com/exndiver/feedback"
 	"github.com/exndiver/feedback/googlesheet"
 
-	//	"encoding/json"
 	"github.com/gorilla/mux"
 )
 
@@ -167,8 +166,7 @@ func getHistoryFromDB(r *http.Request) ([]byte, bool) {
 	if d, err := time.ParseDuration(Config.CacheDuration); err == nil {
 		storage.Set(r.RequestURI, resp, d)
 	} else {
-		// Todo: error logs must be added
-		fmt.Printf("Page not cached. err: %s\n", err)
+		logEvent(4, "HistoryCache", 500, fmt.Sprintf("Page not cached. err: %s\n", err), 0)
 	}
 	return resp, true
 }
@@ -176,7 +174,7 @@ func getHistoryFromDB(r *http.Request) ([]byte, bool) {
 // Method to POST Feedback
 // Example: /api/SendFeedback
 func postFeedback(w http.ResponseWriter, r *http.Request) (int, string, int, string, string) {
-	mn := "postFeedbackRequest"
+	mn := "PostFeedbackRequest"
 	level := 6
 	code := http.StatusOK
 	resp := []byte("Sent!")
@@ -190,13 +188,15 @@ func postFeedback(w http.ResponseWriter, r *http.Request) (int, string, int, str
 
 // Post feedback
 func pf(c string, msg string) {
-	// TODO: Default logs
 	start := time.Now()
 	var message feedback.Message
 	message = googlesheet.NewFeedback(c, msg)
-	message.Send(Config.Feedback)
+	text, status := message.Send(Config.Feedback)
 	elapsed := int64(time.Since(start) / time.Millisecond)
-	go emptyReqLogger(elapsed, "postFeedbackSend")
+	if !status {
+		logEvent(3, "FeedbaclSend", 500, text, elapsed)
+	}
+	logEvent(6, "FeedbaclSend", 200, text, elapsed)
 }
 
 // Subcribe for push msg
