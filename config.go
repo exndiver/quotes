@@ -23,6 +23,7 @@ type Conf struct {
 	Feedback            string
 	Proxy               bool
 	CacheDuration       string
+	LogLoadRatesInfo    bool
 }
 
 // Hosts - hosts configurations
@@ -50,6 +51,7 @@ func getConfig() Conf {
 	var Config Conf
 	Config.DownloadRates = true
 	Config.CacheDuration = "3h"
+	Config.LogLoadRatesInfo = false
 	err := decoder.Decode(&Config)
 	if err != nil {
 		fmt.Println("error:", err)

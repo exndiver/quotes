@@ -54,6 +54,8 @@ func getCrypto() {
 			writeNewCurrency(q)
 		}
 		d := int64(time.Since(start) / time.Millisecond)
-		logEvent(6, "loadCrypto", 200, "Was loaded successfully"+v, d)
+		if Config.LogLoadRatesInfo {
+			logEvent(6, "loadCrypto", 200, "Was loaded successfully"+v, d)
+		}
 	}
 }

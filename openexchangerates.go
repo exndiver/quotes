@@ -83,5 +83,7 @@ func openexchangerates() {
 		}
 	}
 	d := int64(time.Since(start) / time.Millisecond)
-	logEvent(6, "loadOpenExchangerates", 200, "Was loaded successfully", d)
+	if Config.LogLoadRatesInfo {
+		logEvent(6, "loadOpenExchangerates", 200, "Was loaded successfully", d)
+	}
 }
