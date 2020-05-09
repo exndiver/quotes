@@ -1,5 +1,12 @@
 package main
 
+// level:
+//    6 - info
+//    5 - notice
+//    4 - Warning
+//		3 - Error
+//		2 - Critical
+
 import (
 	"encoding/json"
 	"log"
