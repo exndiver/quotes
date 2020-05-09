@@ -30,6 +30,9 @@ type Quote struct {
 	Category int     `json:"category"`
 }
 
+// Quotes struct for each cur from api exch
+type Quotes map[string]float64
+
 // HistoryQuote - Struct for History
 type HistoryQuote struct {
 	Symbol   string    `json:"symbol"`
@@ -41,8 +44,8 @@ type HistoryQuote struct {
 // QutesinMemory - in memory cache of all quotes in db
 var QutesinMemory []*Quote
 
-// currencyTimer - Currency Updater
-func currencyTimer() {
+// currencyHourTimer - Currency Updater
+func currencyHourTimer() {
 	var d = time.Duration(1)
 	var day = int(time.Now().Weekday())
 	if (day == 0) || (day == 6) {
@@ -58,40 +61,67 @@ func currencyTimer() {
 
 	time.Sleep(time.Until(nextTime))
 
-	go currencyTimer()
+	go currencyHourTimer()
 }
 
-func reloadCurrenciesInMemory() {
+func reloadCurrenciesInMemoryAsync() {
 	getAllElementsinMemory()
 	nextTime := time.Now().Truncate(time.Minute * 5)
 	nextTime = nextTime.Add(time.Minute * 5)
 	time.Sleep(time.Until(nextTime))
-	go reloadCurrenciesInMemory()
+	go reloadCurrenciesInMemoryAsync()
 }
 
 func updateQuotesCryptocurrenciesInDB() {
 	if Config.Plugins.Crypto {
 		getCrypto()
 	}
+
 	nextTime := time.Now().Truncate(time.Minute * 10)
 	nextTime = nextTime.Add(time.Minute * 10)
 	time.Sleep(time.Until(nextTime))
 	go updateQuotesCryptocurrenciesInDB()
 }
 
+func updateStocks() {
+	stockRate()
+	nextTime := time.Now().Truncate(time.Minute * 5)
+	nextTime = nextTime.Add(time.Minute * 5)
+	time.Sleep(time.Until(nextTime))
+	go updateStocks()
+}
+
+func serverPrep() {
+	start := time.Now()
+	fmt.Printf("Load all quotes from db\n")
+	getAllElementsinMemory()
+	if Config.DownloadRates {
+		stockRate()
+		if Config.Plugins.OpenExRates {
+			openexchangerates()
+		}
+		if Config.Plugins.Crypto {
+			getCrypto()
+		}
+	}
+	d := int64(time.Since(start) / time.Millisecond)
+	fmt.Printf("Server was prepared in %dms\n", d)
+}
+
 func main() {
 
 	storage = memory.NewStorage()
+	serverPrep()
 
 	if Config.DownloadRates {
 		fmt.Printf("Downloading quotes..\n")
-		go currencyTimer()
+		go currencyHourTimer()
 		go updateQuotesCryptocurrenciesInDB()
 	} else {
 		fmt.Printf("Downloading is swithced off..\n")
 	}
 
-	go reloadCurrenciesInMemory()
+	go reloadCurrenciesInMemoryAsync()
 
 	r := mux.NewRouter().StrictSlash(true)
 
@@ -117,5 +147,5 @@ func main() {
 
 	log.Print(http.ListenAndServe(Config.Hosts.Service, handlers.CORS(handlers.AllowedOrigins([]string{"*"}))(r)))
 
-	fmt.Printf("Server has been started...\n")
+	fmt.Printf("Server has been started. You can use API\n")
 }

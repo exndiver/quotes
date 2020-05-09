@@ -24,6 +24,7 @@ type Conf struct {
 	Proxy               bool
 	CacheDuration       string
 	LogLoadRatesInfo    bool
+	Stocks              map[string]StockProps
 }
 
 // Hosts - hosts configurations
@@ -41,6 +42,14 @@ type CurrenciesType struct {
 type Plugins struct {
 	Crypto      bool
 	OpenExRates bool
+}
+
+// StockProps main properties for different stocks
+type StockProps struct {
+	Host     string
+	Enable   bool
+	Name     string
+	Currency string
 }
 
 // getConfig - loading config file

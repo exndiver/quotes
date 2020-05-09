@@ -13,9 +13,6 @@ type OpenExResponse struct {
 	Rates Quotes `json:"rates"`
 }
 
-// Quotes struct for each cur from api exch
-type Quotes map[string]float64
-
 func openexchangerates() {
 	start := time.Now()
 	var quotes OpenExResponse
@@ -39,33 +36,48 @@ func openexchangerates() {
 		logEvent(4, "loadOpenExchangerates", 500, "Error parsing JSON openexchangerates.org", d)
 		return
 	}
-	var u = 1 / quotes.Rates["EUR"]
+	// Calculate USD rate. The api uses base currency USD, so to calculate other currencies rate to EUR: Rate(USD)*Rate(CurFromAPI)
+	u := 1 / quotes.Rates["EUR"]
+
+	// If USD is overided
+	if Config.Stocks["USD"].Enable {
+		for _, cur := range QutesinMemory {
+			if cur.Category == 0 && cur.Symbol == "USD" {
+				u = cur.Rate
+				break
+			} else {
+				u = 1 / quotes.Rates["EUR"]
+			}
+		}
+	}
 	for _, v := range strings.Split(Config.OpenExRateCurList, ",") {
-		var r = u * quotes.Rates[v]
-		if v == "EUR" {
-			r = 1
-		}
-		str := Quote{
-			Symbol:   v,
-			Rate:     r,
-			Category: 0,
-		}
-		if v == "BYN" {
-			str2 := Quote{
-				Symbol:   "BYR",
+		if !Config.Stocks[v].Enable {
+			var r = u * quotes.Rates[v]
+			if v == "EUR" {
+				r = 1
+			}
+			str := Quote{
+				Symbol:   v,
 				Rate:     r,
 				Category: 0,
 			}
-			if isElementInDB(str2) {
-				updateRate(str2)
-			} else {
-				writeNewCurrency(str2)
+			if v == "BYN" {
+				str2 := Quote{
+					Symbol:   "BYR",
+					Rate:     r,
+					Category: 0,
+				}
+				if isElementInDB(str2) {
+					updateRate(str2)
+				} else {
+					writeNewCurrency(str2)
+				}
 			}
-		}
-		if isElementInDB(str) {
-			updateRate(str)
-		} else {
-			writeNewCurrency(str)
+			if isElementInDB(str) {
+				updateRate(str)
+			} else {
+				writeNewCurrency(str)
+			}
 		}
 	}
 
