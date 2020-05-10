@@ -67,7 +67,7 @@ func loggerJSON(l jsonLog) {
 	}
 	f, err := os.OpenFile("./logs/logs.json", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
 	if err != nil {
-		log.Fatalf("error opening file: %v", err)
+		log.Fatalf("Error opening logs.json file: %v", err)
 	}
 	data, _ := json.Marshal(l)
 	f.WriteString(string(data) + "\n")

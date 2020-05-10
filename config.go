@@ -52,15 +52,25 @@ type StockProps struct {
 	Currency string
 }
 
+func defaultConfig() Conf {
+	var Config Conf
+	Config.Hosts.Mongodb = "mongodb://mongo:27017"
+	Config.Hosts.Service = ":8083"
+	Config.CacheDuration = "3h"
+	Config.Plugins.Crypto = true
+	Config.Plugins.OpenExRates = false
+	Config.DownloadRates = true
+
+	Config.LogLoadRatesInfo = false
+	return Config
+}
+
 // getConfig - loading config file
 func getConfig() Conf {
 	file, _ := os.Open("config/config.json")
 	defer file.Close()
 	decoder := json.NewDecoder(file)
-	var Config Conf
-	Config.DownloadRates = true
-	Config.CacheDuration = "3h"
-	Config.LogLoadRatesInfo = false
+	Config := defaultConfig()
 	err := decoder.Decode(&Config)
 	if err != nil {
 		fmt.Println("error:", err)

@@ -146,6 +146,4 @@ func main() {
 	fmt.Printf("Starting server...\n")
 
 	log.Print(http.ListenAndServe(Config.Hosts.Service, handlers.CORS(handlers.AllowedOrigins([]string{"*"}))(r)))
-
-	fmt.Printf("Server has been started. You can use API\n")
 }
