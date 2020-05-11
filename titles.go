@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"os"
 )
 
@@ -11,7 +12,11 @@ type title map[string]string
 type locale map[string]title
 
 func loadLocales() locale {
-	file, _ := os.Open("config/titles.json")
+	file, e := os.Open("config/titles.json")
+	if e != nil {
+		logError("Error opening titles.json file!", e.Error(), 2)
+		log.Fatalf("Error opening titles.json file: %v", e)
+	}
 	defer file.Close()
 	decoder := json.NewDecoder(file)
 	var l locale
