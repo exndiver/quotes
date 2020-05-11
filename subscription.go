@@ -1,5 +1,7 @@
 package main
 
+import "fmt"
+
 // Subscription - basic struct for push subsriptions
 type Subscription struct {
 	DeviceID  string  `json:"deviceid"`
@@ -38,5 +40,5 @@ func putSubscription(s Subscription) {
 
 // Update Token if changed
 func updSub(s Subscription) {
-
+	fmt.Printf("Here should be some update subscribtion logic\n")
 }
