@@ -1,0 +1,20 @@
+name: Docker Image CI
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Build the Docker image
+      run: docker build . --file Dockerfile --tag docker.pkg.github.com/exndiver/quotes/quotes
+    - name: Push build
+      run:  |
+        echo ${{secrets.GHACT}} | docker login docker.pkg.github.com -u ${{secrets.GHUSUP}} --password-stdin
+        docker tag docker.pkg.github.com/exndiver/quotes/quotes:latest docker.pkg.github.com/exndiver/quotes/quotes:$(date +%s)
+        docker push docker.pkg.github.com/exndiver/quotes/quotes 
