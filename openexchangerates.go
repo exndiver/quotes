@@ -19,7 +19,7 @@ func openexchangerates() {
 	resp, err := http.Get(Config.OpenExRateLink)
 	if err != nil {
 		d := int64(time.Since(start) / time.Millisecond)
-		logEvent(4, "loadOpenExchangerates", 500, "Error importing from openexchangerates", d)
+		logEvent(4, "loadOpenExchangerates", 500, "Error importing from openexchangerates: "+err.Error(), d)
 		return
 	}
 
@@ -28,12 +28,12 @@ func openexchangerates() {
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		d := int64(time.Since(start) / time.Millisecond)
-		logEvent(4, "loadOpenExchangerates", 500, "Error parsing JSON openexchangerates.org", d)
+		logEvent(4, "loadOpenExchangerates", 500, "Error parsing JSON openexchangerates.org: "+err.Error(), d)
 		return
 	}
 	if err := json.Unmarshal(body, &quotes); err != nil {
 		d := int64(time.Since(start) / time.Millisecond)
-		logEvent(4, "loadOpenExchangerates", 500, "Error parsing JSON openexchangerates.org", d)
+		logEvent(4, "loadOpenExchangerates", 500, "Error parsing JSON openexchangerates.org: "+err.Error(), d)
 		return
 	}
 	// Calculate USD rate. The api uses base currency USD, so to calculate other currencies rate to EUR: Rate(USD)*Rate(CurFromAPI)

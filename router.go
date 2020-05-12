@@ -194,9 +194,9 @@ func pf(c string, msg string) {
 	text, status := message.Send(Config.Feedback)
 	elapsed := int64(time.Since(start) / time.Millisecond)
 	if !status {
-		logEvent(3, "FeedbaclSend", 500, text, elapsed)
+		logEvent(3, "FeedbackSend", 500, text, elapsed)
 	}
-	logEvent(6, "FeedbaclSend", 200, text, elapsed)
+	logEvent(6, "FeedbackSend", 200, text, elapsed)
 }
 
 // Subcribe for push msg
