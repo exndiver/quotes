@@ -29,7 +29,7 @@ func ValidType(t string) bool {
 
 //Put Subscribtion to DB
 func putSubscription(s Subscription) {
-	if s.Type == "genetal" {
+	if s.Type == "general" {
 		s.Base = ""
 	}
 	if !isSubscriptionInDB(s) {
