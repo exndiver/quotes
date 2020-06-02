@@ -116,6 +116,7 @@ func main() {
 	if Config.DownloadRates {
 		fmt.Printf("Downloading quotes..\n")
 		go currencyHourTimer()
+		go updateStocks()
 		go updateQuotesCryptocurrenciesInDB()
 	} else {
 		fmt.Printf("Downloading is swithced off..\n")
