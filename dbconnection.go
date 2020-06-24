@@ -115,7 +115,7 @@ func isElementInDB(currency Quote) bool {
 		return false
 	}
 
-	if len(result) = 1 {
+	if len(result) == 1 {
 		return true
 	}
 	return false
@@ -265,7 +265,7 @@ func Updatehistory(currency Quote) {
 		logError("DB problem!", err.Error(), 2)
 		log.Fatalf("DB problem!")
 	}
-	
+
 }
 
 func loadHistory(s string, c int, t int) map[string]float64 {
