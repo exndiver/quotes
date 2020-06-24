@@ -107,7 +107,7 @@ func isElementInDB(currency Quote) bool {
 	cur.Close(context.TODO())
 
 	if len(result) > 1 {
-		_, errDel := collection.DeleteMany(context.TODO(), bson.D{{}})
+		_, errDel := collection.DeleteMany(context.TODO(), filter)
 		if errDel != nil {
 			logError("DB problem!", errDel.Error(), 2)
 			log.Fatalf("DB problem!")
