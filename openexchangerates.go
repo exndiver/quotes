@@ -45,8 +45,6 @@ func openexchangerates() {
 			if cur.Category == 0 && cur.Symbol == "USD" {
 				u = cur.Rate
 				break
-			} else {
-				u = 1 / quotes.Rates["EUR"]
 			}
 		}
 	}
@@ -61,18 +59,6 @@ func openexchangerates() {
 				Rate:     r,
 				Category: 0,
 			}
-			if v == "BYN" {
-				str2 := Quote{
-					Symbol:   "BYR",
-					Rate:     r,
-					Category: 0,
-				}
-				if isElementInDB(str2) {
-					updateRate(str2)
-				} else {
-					writeNewCurrency(str2)
-				}
-			}
 			if isElementInDB(str) {
 				updateRate(str)
 			} else {
@@ -80,7 +66,6 @@ func openexchangerates() {
 			}
 		}
 	}
-
 	for _, v := range strings.Split(Config.OpenExRateMetalList, ",") {
 		var r = u * quotes.Rates[v]
 		str := Quote{

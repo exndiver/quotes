@@ -38,7 +38,7 @@ func getAllElementsinMemory() {
 	errPing := client.Ping(context.TODO(), nil)
 	if errPing != nil {
 		client = dbConnect()
-		fmt.Println("DB connection is lost")
+		logError("getAllElementsinMemory - DB connection is lost!", errPing.Error(), 3)
 	}
 	collection := client.Database("Quotes").Collection("Currencies")
 	cur, err := collection.Find(context.TODO(), bson.D{})
@@ -78,7 +78,7 @@ func isElementInDB(currency Quote) bool {
 	errPing := client.Ping(context.TODO(), nil)
 	if errPing != nil {
 		client = dbConnect()
-		fmt.Println("DB connection is lost")
+		logError("isElementInDB - DB connection is lost!", errPing.Error(), 3)
 	}
 	collection := client.Database("Quotes").Collection("Currencies")
 	filter := bson.D{
@@ -105,7 +105,17 @@ func isElementInDB(currency Quote) bool {
 	}
 
 	cur.Close(context.TODO())
-	if len(result) >= 1 {
+
+	if len(result) > 1 {
+		_, errDel := collection.DeleteMany(context.TODO(), bson.D{{}})
+		if errDel != nil {
+			logError("DB problem!", errDel.Error(), 2)
+			log.Fatalf("DB problem!")
+		}
+		return false
+	}
+
+	if len(result) = 1 {
 		return true
 	}
 	return false
@@ -115,7 +125,7 @@ func updateRate(currency Quote) {
 	errPing := client.Ping(context.TODO(), nil)
 	if errPing != nil {
 		client = dbConnect()
-		fmt.Println("DB connection is lost")
+		logError("updateRate - DB connection is lost!", errPing.Error(), 3)
 	}
 	collection := client.Database("Quotes").Collection("Currencies")
 	filter := bson.D{
@@ -140,7 +150,7 @@ func writeNewCurrency(currency Quote) {
 	errPing := client.Ping(context.TODO(), nil)
 	if errPing != nil {
 		client = dbConnect()
-		fmt.Println("DB connection is lost")
+		logError("writeNewCurrency - DB connection is lost!", errPing.Error(), 3)
 	}
 	collection := client.Database("Quotes").Collection("Currencies")
 	_, err := collection.InsertOne(context.TODO(), currency)
@@ -148,7 +158,6 @@ func writeNewCurrency(currency Quote) {
 		logError("DB problem!", err.Error(), 2)
 		log.Fatalf("DB problem!")
 	}
-
 	writeHistory(currency)
 }
 
@@ -167,7 +176,7 @@ func writeHistory(currency Quote) {
 	errPing := client.Ping(context.TODO(), nil)
 	if errPing != nil {
 		client = dbConnect()
-		fmt.Println("DB connection is lost")
+		logError("writeHistory - DB connection is lost!", errPing.Error(), 3)
 	}
 	collection := client.Database("Quotes").Collection("History")
 	filter := bson.D{
@@ -212,7 +221,7 @@ func AddHistory(currency Quote) {
 	errPing := client.Ping(context.TODO(), nil)
 	if errPing != nil {
 		client = dbConnect()
-		fmt.Println("DB connection is lost")
+		logError("AddHistory - DB connection is lost!", errPing.Error(), 3)
 	}
 	var h HistoryQuote
 	h.Category = currency.Category
@@ -238,7 +247,7 @@ func Updatehistory(currency Quote) {
 	errPing := client.Ping(context.TODO(), nil)
 	if errPing != nil {
 		client = dbConnect()
-		fmt.Println("DB connection is lost")
+		logError("Updatehistory - DB connection is lost!", errPing.Error(), 3)
 	}
 	collection := client.Database("Quotes").Collection("History")
 	filter := bson.D{
@@ -256,7 +265,7 @@ func Updatehistory(currency Quote) {
 		logError("DB problem!", err.Error(), 2)
 		log.Fatalf("DB problem!")
 	}
-
+	
 }
 
 func loadHistory(s string, c int, t int) map[string]float64 {
@@ -265,7 +274,7 @@ func loadHistory(s string, c int, t int) map[string]float64 {
 	errPing := client.Ping(context.TODO(), nil)
 	if errPing != nil {
 		client = dbConnect()
-		fmt.Println("DB connection is lost")
+		logError("loadHistory - DB connection is lost!", errPing.Error(), 3)
 	}
 	collection := client.Database("Quotes").Collection("History")
 	filter := bson.D{
@@ -306,7 +315,7 @@ func isSubscriptionInDB(s Subscription) bool {
 	errPing := client.Ping(context.TODO(), nil)
 	if errPing != nil {
 		client = dbConnect()
-		fmt.Println("DB connection is lost")
+		logError("isSubscriptionInDB - DB connection is lost!", errPing.Error(), 3)
 	}
 	collection := client.Database("Quotes").Collection("Subscriptions")
 	filter := bson.D{
@@ -350,7 +359,7 @@ func writeNewSubscription(s Subscription) {
 	errPing := client.Ping(context.TODO(), nil)
 	if errPing != nil {
 		client = dbConnect()
-		fmt.Println("DB connection is lost")
+		logError("writeNewSubscription - DB connection is lost!", errPing.Error(), 3)
 	}
 	collection := client.Database("Quotes").Collection("Subscriptions")
 	_, err := collection.InsertOne(context.TODO(), s)
