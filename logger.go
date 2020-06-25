@@ -1,6 +1,7 @@
 package main
 
 // level:
+//		7 - debug
 //    6 - info
 //    5 - notice
 //    4 - Warning
@@ -29,7 +30,7 @@ type jsonLog struct {
 	Duration             int64     `json:"_duration"`
 }
 
-//Simple log
+//Simple log; lv - logs level (6 info, 4 warning, 3 error, 2 - critical), m - Method; RC - response code, R - response string, d - request duration
 func logEvent(lv int, m string, rc int, r string, d int64) {
 	var l jsonLog
 	l.Level = lv

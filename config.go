@@ -25,6 +25,7 @@ type Conf struct {
 	CacheDuration       string
 	LogLoadRatesInfo    bool
 	Stocks              map[string]StockProps
+	LogDebug            bool
 }
 
 // Hosts - hosts configurations
@@ -60,7 +61,7 @@ func defaultConfig() Conf {
 	Config.Plugins.Crypto = true
 	Config.Plugins.OpenExRates = false
 	Config.DownloadRates = true
-
+	Config.LogDebug = false
 	Config.LogLoadRatesInfo = false
 	return Config
 }

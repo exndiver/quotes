@@ -108,6 +108,7 @@ func isElementInDB(currency Quote) bool {
 
 	if len(result) > 1 {
 		_, errDel := collection.DeleteMany(context.TODO(), filter)
+		logError("More than one in Quotes!", currency.Symbol, 3)
 		if errDel != nil {
 			logError("DB problem!", errDel.Error(), 2)
 			log.Fatalf("DB problem!")
@@ -122,6 +123,7 @@ func isElementInDB(currency Quote) bool {
 }
 
 func updateRate(currency Quote) {
+	start := time.Now()
 	errPing := client.Ping(context.TODO(), nil)
 	if errPing != nil {
 		client = dbConnect()
@@ -142,11 +144,15 @@ func updateRate(currency Quote) {
 		logError("DB problem!", err.Error(), 2)
 		log.Fatalf("DB problem!")
 	}
-
+	elapsed := int64(time.Since(start) / time.Millisecond)
+	if Config.LogDebug {
+		logEvent(7, "Rate update", 200, currency.Symbol, elapsed)
+	}
 	writeHistory(currency)
 }
 
 func writeNewCurrency(currency Quote) {
+	start := time.Now()
 	errPing := client.Ping(context.TODO(), nil)
 	if errPing != nil {
 		client = dbConnect()
@@ -157,6 +163,10 @@ func writeNewCurrency(currency Quote) {
 	if err != nil {
 		logError("DB problem!", err.Error(), 2)
 		log.Fatalf("DB problem!")
+	}
+	elapsed := int64(time.Since(start) / time.Millisecond)
+	if Config.LogDebug {
+		logEvent(7, "Rate writed", 200, currency.Symbol, elapsed)
 	}
 	writeHistory(currency)
 }
@@ -206,7 +216,17 @@ func writeHistory(currency Quote) {
 	}
 
 	cur.Close(context.TODO())
-	if len(result) >= 1 {
+	if len(result) > 1 {
+		_, errDel := collection.DeleteMany(context.TODO(), filter)
+		logError("More than one in History!", currency.Symbol, 3)
+		if errDel != nil {
+			logError("DB problem!", errDel.Error(), 2)
+			log.Fatalf("DB problem!")
+		}
+		AddHistory(currency)
+		return
+	}
+	if len(result) == 1 {
 		Updatehistory(currency)
 		return
 	}
@@ -218,6 +238,7 @@ func writeHistory(currency Quote) {
 
 // AddHistory - add new history record
 func AddHistory(currency Quote) {
+	start := time.Now()
 	errPing := client.Ping(context.TODO(), nil)
 	if errPing != nil {
 		client = dbConnect()
@@ -236,11 +257,15 @@ func AddHistory(currency Quote) {
 		logError("DB problem!", err.Error(), 2)
 		log.Fatalf("DB problem!")
 	}
-
+	elapsed := int64(time.Since(start) / time.Millisecond)
+	if Config.LogDebug {
+		logEvent(7, "History writed", 200, currency.Symbol, elapsed)
+	}
 }
 
 // Updatehistory - update existing history
 func Updatehistory(currency Quote) {
+	start := time.Now()
 	var date = time.Now().Format("01-02-2006")
 	var layout = "01-02-2006"
 	var d, _ = time.Parse(layout, date)
@@ -265,7 +290,10 @@ func Updatehistory(currency Quote) {
 		logError("DB problem!", err.Error(), 2)
 		log.Fatalf("DB problem!")
 	}
-
+	elapsed := int64(time.Since(start) / time.Millisecond)
+	if Config.LogDebug {
+		logEvent(7, "History updated", 200, currency.Symbol, elapsed)
+	}
 }
 
 func loadHistory(s string, c int, t int) map[string]float64 {
