@@ -26,6 +26,7 @@ type Conf struct {
 	LogLoadRatesInfo    bool
 	Stocks              map[string]StockProps
 	LogDebug            bool
+	HistoryOldMethod		bool
 }
 
 // Hosts - hosts configurations
@@ -63,6 +64,7 @@ func defaultConfig() Conf {
 	Config.DownloadRates = true
 	Config.LogDebug = false
 	Config.LogLoadRatesInfo = false
+	Config.HistoryOldMethod = true
 	return Config
 }
 

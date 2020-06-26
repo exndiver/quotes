@@ -216,23 +216,28 @@ func writeHistory(currency Quote) {
 	}
 
 	cur.Close(context.TODO())
-	if len(result) > 1 {
-		_, errDel := collection.DeleteMany(context.TODO(), filter)
-		logError("More than one in History!", currency.Symbol, 3)
-		if errDel != nil {
-			logError("DB problem!", errDel.Error(), 2)
-			log.Fatalf("DB problem!")
+
+	if Config.HistoryOldMethod {
+		if len(result) > 1 {
+			_, errDel := collection.DeleteMany(context.TODO(), filter)
+			logError("More than one in History!", currency.Symbol, 3)
+			if errDel != nil {
+				logError("DB problem!", errDel.Error(), 2)
+				log.Fatalf("DB problem!")
+			}
+			AddHistory(currency)
+			return
 		}
-		AddHistory(currency)
-		return
-	}
-	if len(result) == 1 {
-		Updatehistory(currency)
-		return
-	}
-	if len(result) < 1 {
-		AddHistory(currency)
-		return
+		if len(result) == 1 {
+			Updatehistory(currency)
+			return
+		}
+		if len(result) < 1 {
+			AddHistory(currency)
+			return
+		}
+	} else {
+		historyDBUpdate()
 	}
 }
 
