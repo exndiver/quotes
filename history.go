@@ -10,7 +10,6 @@ import (
 
 func historyDBUpdate() {
 	if historyCountInDb() > 0 {
-		//	historyUpdateInDB()
 		historyRemoveTodayFromDB()
 		historyInsertInDB()
 	} else {

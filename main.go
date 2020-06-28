@@ -68,6 +68,9 @@ func reloadCurrenciesInMemoryAsync() {
 	getAllElementsinMemory()
 	nextTime := time.Now().Truncate(time.Minute * 5)
 	nextTime = nextTime.Add(time.Minute * 5)
+	if !Config.HistoryOldMethod {
+		historyDBUpdate()
+	}
 	time.Sleep(time.Until(nextTime))
 	go reloadCurrenciesInMemoryAsync()
 }

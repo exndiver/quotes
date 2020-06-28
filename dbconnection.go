@@ -236,8 +236,6 @@ func writeHistory(currency Quote) {
 			AddHistory(currency)
 			return
 		}
-	} else {
-		historyDBUpdate()
 	}
 }
 
