@@ -4,23 +4,41 @@ import (
 	"context"
 	"time"
 
-	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-
-func historyDBUpdate(){
+func historyDBUpdate() {
 	if historyCountInDb() > 0 {
-	//	historyUpdateInDB()
-	historyRemoveTodayFromDB()
-	historyInsertInDB()
+		//	historyUpdateInDB()
+		historyRemoveTodayFromDB()
+		historyInsertInDB()
 	} else {
 		historyInsertInDB()
 	}
-
 }
 
-func historyCountInDb() int64{
+func historyStructToDB() []interface{} {
+	var day = int(time.Now().Weekday())
+	var d, _ = time.Parse("01-02-2006", time.Now().Format("01-02-2006"))
+	var h []interface{}
+	for _, cur := range QutesinMemory {
+		var n HistoryQuote
+		n.Symbol = cur.Symbol
+		n.Category = cur.Category
+		n.Rate = cur.Rate
+		n.Date = d
+		if cur.Category != 1 {
+			if (day == 0) || (day == 6) {
+				continue
+			}
+		}
+		h = append(h, &n)
+	}
+	return h
+}
+
+func historyCountInDb() int64 {
 	var d, _ = time.Parse("01-02-2006", time.Now().Format("01-02-2006"))
 	errPing := client.Ping(context.TODO(), nil)
 	if errPing != nil {
@@ -30,23 +48,14 @@ func historyCountInDb() int64{
 	collection := client.Database("Quotes").Collection("History")
 	filter := bson.D{
 		primitive.E{Key: "date", Value: d},
-	}	
+	}
 	itemCount, _ := collection.CountDocuments(context.TODO(), filter)
 	return itemCount
 }
 
-func historyInsertInDB(){
+func historyInsertInDB() {
 	start := time.Now()
-	var d, _ = time.Parse("01-02-2006", time.Now().Format("01-02-2006"))
-	var h []interface{}
-	for _, cur := range QutesinMemory {
-		var n HistoryQuote
-		n.Symbol = cur.Symbol
-		n.Category = cur.Category
-		n.Rate = cur.Rate
-		n.Date = d
-		h = append(h,&n)
-	}
+	h := historyStructToDB()
 	errPing := client.Ping(context.TODO(), nil)
 	if errPing != nil {
 		client = dbConnect()
@@ -64,7 +73,7 @@ func historyInsertInDB(){
 	}
 }
 
-func historyUpdateInDB(){
+func historyUpdateInDB() {
 	start := time.Now()
 	var d, _ = time.Parse("01-02-2006", time.Now().Format("01-02-2006"))
 	errPing := client.Ping(context.TODO(), nil)
@@ -97,9 +106,7 @@ func historyUpdateInDB(){
 	}
 }
 
-
-
-func historyRemoveTodayFromDB(){
+func historyRemoveTodayFromDB() {
 	start := time.Now()
 	var d, _ = time.Parse("01-02-2006", time.Now().Format("01-02-2006"))
 	errPing := client.Ping(context.TODO(), nil)
@@ -110,11 +117,11 @@ func historyRemoveTodayFromDB(){
 	collection := client.Database("Quotes").Collection("History")
 	filter := bson.D{
 		primitive.E{Key: "date", Value: d},
-	}	
+	}
 	_, errDel := collection.DeleteMany(context.TODO(), filter)
 	if errDel != nil {
-			logError("DB problem!", errDel.Error(), 2)
-			return
+		logError("DB problem!", errDel.Error(), 2)
+		return
 	}
 
 	elapsed := int64(time.Since(start) / time.Millisecond)
