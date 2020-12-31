@@ -10,6 +10,7 @@ import (
 
 	"github.com/exndiver/feedback"
 	"github.com/exndiver/feedback/googlesheet"
+	"github.com/exndiver/feedback/telegram"
 
 	"github.com/gorilla/mux"
 )
@@ -180,7 +181,12 @@ func postFeedback(w http.ResponseWriter, r *http.Request) (int, string, int, str
 	resp := []byte("Sent!")
 	rbody := r.FormValue("message")
 	if r.FormValue("message") != "" {
-		go pf(strings.Join(r.Header["X-Forwarded-For"], ","), rbody)
+		if Config.Feedback.Type == "googlesheet" {
+			go pf(strings.Join(r.Header["X-Forwarded-For"], ","), rbody)
+		} else {
+			go pfT(strings.Join(r.Header["X-Forwarded-For"], ","), rbody)
+		}
+
 	}
 	w.Write(resp)
 	return code, mn, level, string(resp), rbody
@@ -191,7 +197,20 @@ func pf(c string, msg string) {
 	start := time.Now()
 	var message feedback.Message
 	message = googlesheet.NewFeedback(c, msg)
-	text, status := message.Send(Config.Feedback)
+	text, status := message.Send(Config.Feedback.Googlesheet)
+	elapsed := int64(time.Since(start) / time.Millisecond)
+	if !status {
+		logEvent(3, "FeedbackSend", 500, text, elapsed)
+	}
+	logEvent(6, "FeedbackSend", 200, text, elapsed)
+}
+
+// Post feedback
+func pfT(c string, msg string) {
+	start := time.Now()
+	var message feedback.Message
+	message = telegram.NewFeedback(c, msg, Config.Feedback.Telegram.ChatID)
+	text, status := message.Send(Config.Feedback.Telegram.BotToken)
 	elapsed := int64(time.Since(start) / time.Millisecond)
 	if !status {
 		logEvent(3, "FeedbackSend", 500, text, elapsed)

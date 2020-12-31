@@ -20,13 +20,26 @@ type Conf struct {
 	OpenExRateCurList   string
 	OpenExRateMetalList string
 	OpenExRateLink      string
-	Feedback            string
+	Feedback            Feedback
 	Proxy               bool
 	CacheDuration       string
 	LogLoadRatesInfo    bool
 	Stocks              map[string]StockProps
 	LogDebug            bool
-	HistoryOldMethod		bool
+	HistoryOldMethod    bool
+}
+
+// Feedback - config for feedback
+type Feedback struct {
+	Type        string // telegram or googpesheet
+	Googlesheet string
+	Telegram    Telegram
+}
+
+//Telegram - config for feedback
+type Telegram struct {
+	ChatID   string
+	BotToken string
 }
 
 // Hosts - hosts configurations
@@ -65,6 +78,7 @@ func defaultConfig() Conf {
 	Config.LogDebug = false
 	Config.LogLoadRatesInfo = false
 	Config.HistoryOldMethod = true
+	Config.Feedback.Type = "telegram"
 	return Config
 }
 
