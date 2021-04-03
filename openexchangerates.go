@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"strings"
 	"time"
-	"fmt"
 )
 
 // OpenExResponse - response from openexachangerates api
@@ -39,7 +38,6 @@ func openexchangerates() {
 	}
 	// Calculate USD rate. The api uses base currency USD, so to calculate other currencies rate to EUR: Rate(USD)*Rate(CurFromAPI)
 	u := 1 / quotes.Rates["EUR"]
-	fmt.printf(u)
 
 	// If USD is overided
 	if Config.Stocks["USD"].Enable {
@@ -52,12 +50,10 @@ func openexchangerates() {
 	}
 	for _, v := range strings.Split(Config.OpenExRateCurList, ",") {
 		if !Config.Stocks[v].Enable {
-			fmt.printf(v)
 			var r = u * quotes.Rates[v]
 			if v == "EUR" {
 				r = 1
 			}
-			fmt.printf(r)
 			str := Quote{
 				Symbol:   v,
 				Rate:     r,
