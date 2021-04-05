@@ -38,7 +38,6 @@ func openexchangerates() {
 	}
 	// Calculate USD rate. The api uses base currency USD, so to calculate other currencies rate to EUR: Rate(USD)*Rate(CurFromAPI)
 	u := 1 / quotes.Rates["EUR"]
-
 	// If USD is overided
 	if Config.Stocks["USD"].Enable {
 		for _, cur := range QutesinMemory {

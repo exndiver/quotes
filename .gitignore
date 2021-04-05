@@ -21,3 +21,4 @@ test
 titles*
 *.http
 *.code-workspace
+.DS_Store*

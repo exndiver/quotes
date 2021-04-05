@@ -27,11 +27,13 @@ func stockRate() {
 		status := true
 		switch v.Name {
 		case "EU":
-			q, status = getEURates(v.Currency, body)
-			if !status {
-				d := int64(time.Since(start) / time.Millisecond)
-				logEvent(4, "loadStocks", 500, "Error parsing JSON stocks "+v.Host+": "+err.Error(), d)
-				continue
+			if v.Enable {
+				q, status = getEURates(v.Currency, body)
+				if !status {
+					d := int64(time.Since(start) / time.Millisecond)
+					logEvent(4, "loadStocks", 500, "Error parsing JSON stocks "+v.Host+": "+err.Error(), d)
+					continue
+				}
 			}
 		default:
 			continue
