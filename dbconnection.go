@@ -148,7 +148,7 @@ func updateRate(currency Quote) {
 	if Config.LogDebug {
 		logEvent(7, "Rate update", 200, currency.Symbol, elapsed)
 	}
-	writeHistory(currency)
+//	writeHistory(currency)
 }
 
 func writeNewCurrency(currency Quote) {
@@ -168,7 +168,7 @@ func writeNewCurrency(currency Quote) {
 	if Config.LogDebug {
 		logEvent(7, "Rate writed", 200, currency.Symbol, elapsed)
 	}
-	writeHistory(currency)
+//	writeHistory(currency)
 }
 
 // writeHistory - Working with history of quotes

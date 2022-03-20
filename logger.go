@@ -66,6 +66,7 @@ func loggerJSON(l jsonLog) {
 	if l.ResponseCode == 0 {
 		l.ResponseCode = 200
 	}
+	_ = os.MkdirAll("./logs/", os.ModePerm)
 	f, err := os.OpenFile("./logs/logs.json", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
 	if err != nil {
 		log.Fatalf("Error opening logs.json file: %v", err)

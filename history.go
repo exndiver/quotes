@@ -12,8 +12,10 @@ func historyDBUpdate() {
 	if historyCountInDb() > 0 {
 		historyRemoveTodayFromDB()
 		historyInsertInDB()
+		historyInsertInDB1H()
 	} else {
 		historyInsertInDB()
+		historyInsertInDB1H()
 	}
 }
 
@@ -58,7 +60,7 @@ func historyInsertInDB() {
 	errPing := client.Ping(context.TODO(), nil)
 	if errPing != nil {
 		client = dbConnect()
-		logError("historyRemoveTodayFromDB - DB connection is lost!", errPing.Error(), 3)
+		logError("historyInsertInDB - DB connection is lost!", errPing.Error(), 3)
 		return
 	}
 	collection := client.Database("Quotes").Collection("History")
@@ -72,36 +74,43 @@ func historyInsertInDB() {
 	}
 }
 
-func historyUpdateInDB() {
+func historyStructToDB_1h() []interface{} {
+	var day = int(time.Now().Weekday())
+	var d, _ = time.Parse("01-02-2006 15:02:00", time.Now().Format("01-02-2006 15:02:00"))
+	var h []interface{}
+	for _, cur := range QutesinMemory {
+		var n HistoryQuote
+		n.Symbol = cur.Symbol
+		n.Category = cur.Category
+		n.Rate = cur.Rate
+		n.Date = d
+		if cur.Category != 1 {
+			if (day == 12) || (day == 11) {
+				continue
+			}
+		}
+		h = append(h, &n)
+	}
+	return h
+}
+
+func historyInsertInDB1H() {
 	start := time.Now()
-	var d, _ = time.Parse("01-02-2006", time.Now().Format("01-02-2006"))
+	h := historyStructToDB_1h()
 	errPing := client.Ping(context.TODO(), nil)
 	if errPing != nil {
 		client = dbConnect()
-		logError("historyRemoveTodayFromDB - DB connection is lost!", errPing.Error(), 3)
+		logError("historyInsertInDB1H - DB connection is lost!", errPing.Error(), 3)
 		return
 	}
-	collection := client.Database("Quotes").Collection("History")
-	for _, cur := range QutesinMemory {
-		filter := bson.D{
-			primitive.E{Key: "symbol", Value: cur.Symbol},
-			primitive.E{Key: "category", Value: cur.Category},
-			primitive.E{Key: "date", Value: d},
-		}
-		update := bson.D{
-			primitive.E{Key: "$set", Value: bson.D{
-				primitive.E{Key: "rate", Value: cur.Rate},
-			}},
-		}
-		_, err := collection.UpdateOne(context.TODO(), filter, update)
-		if err != nil {
-			logError("DB problem!", err.Error(), 2)
-			return
-		}
+	collection := client.Database("Quotes").Collection("History_1h")
+	_, err := collection.InsertMany(context.TODO(), h)
+	if err != nil {
+		logError("DB problem!", err.Error(), 2)
 	}
 	elapsed := int64(time.Since(start) / time.Millisecond)
 	if Config.LogDebug {
-		logEvent(7, "History updated", 200, "", elapsed)
+		logEvent(7, "History 1H added", 200, "", elapsed)
 	}
 }
 

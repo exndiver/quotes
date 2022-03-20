@@ -15,35 +15,6 @@ import (
 	"github.com/gorilla/mux"
 )
 
-func logger(endpoint func(http.ResponseWriter, *http.Request) (int, string, int, string, string)) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		start := time.Now()
-
-		code, mn, level, resp, reqBod := endpoint(w, r)
-
-		elapsed := int64(time.Since(start) / time.Millisecond)
-
-		var l jsonLog
-		l.Duration = elapsed
-		l.Level = level
-		l.Method = mn
-		l.RequestURI = r.RequestURI
-
-		ip := r.RemoteAddr
-		if r.Header["X-Forwarded-For"] != nil {
-			ip = r.Header["X-Forwarded-For"][0]
-		}
-		//l.RequestRemoteAddress = r.RemoteAddr
-		l.RequestRemoteAddress = ip
-		l.Request = string(reqBod)
-		reqH, _ := json.Marshal(r.Header)
-		l.RequestHeaders = string(reqH)
-		l.Response = resp
-		l.ResponseCode = code
-
-		loggerJSON(l)
-	})
-}
 
 // DefaultPage - Very Default responce
 func DefaultPage(w http.ResponseWriter, r *http.Request) (int, string, int, string, string) {
@@ -195,8 +166,7 @@ func postFeedback(w http.ResponseWriter, r *http.Request) (int, string, int, str
 // Post feedback
 func pf(c string, msg string) {
 	start := time.Now()
-	var message feedback.Message
-	message = googlesheet.NewFeedback(c, msg)
+	var message feedback.Message = googlesheet.NewFeedback(c, msg)
 	text, status := message.Send(Config.Feedback.Googlesheet)
 	elapsed := int64(time.Since(start) / time.Millisecond)
 	if !status {
@@ -208,8 +178,7 @@ func pf(c string, msg string) {
 // Post feedback
 func pfT(c string, msg string) {
 	start := time.Now()
-	var message feedback.Message
-	message = telegram.NewFeedback(c, msg, Config.Feedback.Telegram.ChatID)
+	var message feedback.Message = telegram.NewFeedback(c, msg, Config.Feedback.Telegram.ChatID)
 	text, status := message.Send(Config.Feedback.Telegram.BotToken)
 	elapsed := int64(time.Since(start) / time.Millisecond)
 	if !status {

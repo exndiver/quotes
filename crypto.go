@@ -29,18 +29,18 @@ func getCrypto() {
 		body, err := ioutil.ReadAll(resp.Body)
 		if err != nil {
 			d := int64(time.Since(start) / time.Millisecond)
-			logEvent(4, "loadCrypto", 500, "Error getting responce body"+v+". Error: "+err.Error(), d)
+			logEvent(4, "loadCrypto", 500, "Error getting responce body "+v+". Error: "+err.Error(), d)
 			return
 		}
 		if err := json.Unmarshal(body, &C); err != nil {
 			d := int64(time.Since(start) / time.Millisecond)
-			logEvent(4, "loadCrypto", 500, "Error parsing JSON for"+v+". Error: "+err.Error(), d)
+			logEvent(4, "loadCrypto", 500, "Error parsing JSON for "+v+". Error: "+err.Error(), d)
 			return
 		}
 		var s, e = strconv.ParseFloat(C.Ticker["price"], 64)
 		if e != nil {
 			d := int64(time.Since(start) / time.Millisecond)
-			logEvent(4, "loadCrypto", 500, "Error parsing the price for"+v+". Error: "+err.Error(), d)
+			logEvent(4, "loadCrypto", 500, "Error parsing the price for "+v+". Error: "+err.Error(), d)
 			return
 		}
 		var q = Quote{

@@ -63,9 +63,7 @@ func responseAvialibleCurrencies() []byte {
 
 	for _, Type := range strings.Split(Config.AvialibleTypes, ",") {
 		var temArr []string
-		for _, Cur := range strings.Split(Config.AvialibleList[Type], ",") {
-			temArr = append(temArr, Cur)
-		}
+		temArr = append(temArr, strings.Split(Config.AvialibleList[Type], ",")...)
 		sort.Strings(temArr)
 		r = append(r, Response{Type, temArr})
 	}

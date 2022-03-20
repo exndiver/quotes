@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -48,11 +49,12 @@ var QutesinMemory []*Quote
 func currencyHourTimer() {
 	var d = time.Duration(1)
 	var day = int(time.Now().Weekday())
-	if (day == 0) || (day == 6) {
-		d = time.Duration(12)
-	}
 	nextTime := time.Now().Truncate(time.Hour * d)
 	nextTime = nextTime.Add(time.Hour * d)
+
+	if (day == 0) || (day == 6) {
+		return
+	}
 	// Check plugins and Update
 
 	if Config.Plugins.OpenExRates {
@@ -68,9 +70,7 @@ func reloadCurrenciesInMemoryAsync() {
 	getAllElementsinMemory()
 	nextTime := time.Now().Truncate(time.Minute * 5)
 	nextTime = nextTime.Add(time.Minute * 5)
-	if !Config.HistoryOldMethod {
-		historyDBUpdate()
-	}
+	historyDBUpdate()
 	time.Sleep(time.Until(nextTime))
 	go reloadCurrenciesInMemoryAsync()
 }
@@ -80,8 +80,8 @@ func updateQuotesCryptocurrenciesInDB() {
 		getCrypto()
 	}
 
-	nextTime := time.Now().Truncate(time.Minute * 10)
-	nextTime = nextTime.Add(time.Minute * 10)
+	nextTime := time.Now().Truncate(time.Minute * 1)
+	nextTime = nextTime.Add(time.Minute * 1)
 	time.Sleep(time.Until(nextTime))
 	go updateQuotesCryptocurrenciesInDB()
 }
@@ -150,4 +150,34 @@ func main() {
 	fmt.Printf("Starting server...\n")
 
 	log.Print(http.ListenAndServe(Config.Hosts.Service, handlers.CORS(handlers.AllowedOrigins([]string{"*"}))(r)))
+}
+
+func logger(endpoint func(http.ResponseWriter, *http.Request) (int, string, int, string, string)) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		start := time.Now()
+
+		code, mn, level, resp, reqBod := endpoint(w, r)
+
+		elapsed := int64(time.Since(start) / time.Millisecond)
+
+		var l jsonLog
+		l.Duration = elapsed
+		l.Level = level
+		l.Method = mn
+		l.RequestURI = r.RequestURI
+
+		ip := r.RemoteAddr
+		if r.Header["X-Forwarded-For"] != nil {
+			ip = r.Header["X-Forwarded-For"][0]
+		}
+		//l.RequestRemoteAddress = r.RemoteAddr
+		l.RequestRemoteAddress = ip
+		l.Request = string(reqBod)
+		reqH, _ := json.Marshal(r.Header)
+		l.RequestHeaders = string(reqH)
+		l.Response = resp
+		l.ResponseCode = code
+
+		loggerJSON(l)
+	})
 }
