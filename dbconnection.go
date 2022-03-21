@@ -145,10 +145,8 @@ func updateRate(currency Quote) {
 		log.Fatalf("DB problem!")
 	}
 	elapsed := int64(time.Since(start) / time.Millisecond)
-	if Config.LogDebug {
-		logEvent(7, "Rate update", 200, currency.Symbol, elapsed)
-	}
-//	writeHistory(currency)
+	logEvent(7, "Rate update", 200, currency.Symbol, elapsed)
+	//	writeHistory(currency)
 }
 
 func writeNewCurrency(currency Quote) {
@@ -165,10 +163,8 @@ func writeNewCurrency(currency Quote) {
 		log.Fatalf("DB problem!")
 	}
 	elapsed := int64(time.Since(start) / time.Millisecond)
-	if Config.LogDebug {
-		logEvent(7, "Rate writed", 200, currency.Symbol, elapsed)
-	}
-//	writeHistory(currency)
+	logEvent(7, "Rate writed", 200, currency.Symbol, elapsed)
+	//	writeHistory(currency)
 }
 
 // writeHistory - Working with history of quotes
@@ -261,9 +257,7 @@ func AddHistory(currency Quote) {
 		log.Fatalf("DB problem!")
 	}
 	elapsed := int64(time.Since(start) / time.Millisecond)
-	if Config.LogDebug {
-		logEvent(7, "History writed", 200, currency.Symbol, elapsed)
-	}
+	logEvent(7, "History writed", 200, currency.Symbol, elapsed)
 }
 
 // Updatehistory - update existing history
@@ -294,9 +288,7 @@ func Updatehistory(currency Quote) {
 		log.Fatalf("DB problem!")
 	}
 	elapsed := int64(time.Since(start) / time.Millisecond)
-	if Config.LogDebug {
-		logEvent(7, "History updated", 200, currency.Symbol, elapsed)
-	}
+	logEvent(7, "History updated", 200, currency.Symbol, elapsed)
 }
 
 func loadHistory(s string, c int, t int) map[string]float64 {

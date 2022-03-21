@@ -69,9 +69,7 @@ func historyInsertInDB() {
 		logError("DB problem!", err.Error(), 2)
 	}
 	elapsed := int64(time.Since(start) / time.Millisecond)
-	if Config.LogDebug {
-		logEvent(7, "History added", 200, "", elapsed)
-	}
+	logEvent(7, "History added", 200, "", elapsed)
 }
 
 func historyStructToDB_1h() []interface{} {
@@ -109,9 +107,7 @@ func historyInsertInDB1H() {
 		logError("DB problem!", err.Error(), 2)
 	}
 	elapsed := int64(time.Since(start) / time.Millisecond)
-	if Config.LogDebug {
-		logEvent(7, "History 1H added", 200, "", elapsed)
-	}
+	logEvent(7, "History 1H added", 200, "", elapsed)
 }
 
 func historyRemoveTodayFromDB() {
@@ -133,7 +129,5 @@ func historyRemoveTodayFromDB() {
 	}
 
 	elapsed := int64(time.Since(start) / time.Millisecond)
-	if Config.LogDebug {
-		logEvent(7, "History updated", 200, "", elapsed)
-	}
+	logEvent(7, "History updated", 200, "", elapsed)
 }
