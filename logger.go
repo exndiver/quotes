@@ -57,21 +57,23 @@ func loggerJSON(l jsonLog) {
 	if l.Level == 0 {
 		l.Level = 6
 	}
-	if l.Version == "" {
-		l.Version = "1.1"
+	if Config.MinLogLevel >= l.Level {
+		if l.Version == "" {
+			l.Version = "1.1"
+		}
+		if l.Host == "" {
+			l.Host = "Quotes"
+		}
+		if l.ResponseCode == 0 {
+			l.ResponseCode = 200
+		}
+		_ = os.MkdirAll("./logs/", os.ModePerm)
+		f, err := os.OpenFile("./logs/logs.json", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+		if err != nil {
+			log.Fatalf("Error opening logs.json file: %v", err)
+		}
+		data, _ := json.Marshal(l)
+		f.WriteString(string(data) + "\n")
+		f.Close()
 	}
-	if l.Host == "" {
-		l.Host = "Quotes"
-	}
-	if l.ResponseCode == 0 {
-		l.ResponseCode = 200
-	}
-	_ = os.MkdirAll("./logs/", os.ModePerm)
-	f, err := os.OpenFile("./logs/logs.json", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
-	if err != nil {
-		log.Fatalf("Error opening logs.json file: %v", err)
-	}
-	data, _ := json.Marshal(l)
-	f.WriteString(string(data) + "\n")
-	f.Close()
 }

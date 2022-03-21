@@ -27,6 +27,7 @@ type Conf struct {
 	Stocks              map[string]StockProps
 	LogDebug            bool
 	HistoryOldMethod    bool
+	MinLogLevel         int
 }
 
 // Feedback - config for feedback
@@ -79,6 +80,7 @@ func defaultConfig() Conf {
 	Config.LogLoadRatesInfo = false
 	Config.HistoryOldMethod = true
 	Config.Feedback.Type = "telegram"
+	Config.MinLogLevel = 6
 	return Config
 }
 

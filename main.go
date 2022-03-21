@@ -53,6 +53,7 @@ func currencyHourTimer() {
 	nextTime = nextTime.Add(time.Hour * d)
 
 	if (day == 0) || (day == 6) {
+		logEvent(7, "CurrenciesUpdate", 400, "Skip update. It is weekend: day "+string(rune(day)), 0)
 		return
 	}
 	// Check plugins and Update
@@ -60,7 +61,7 @@ func currencyHourTimer() {
 	if Config.Plugins.OpenExRates {
 		openexchangerates()
 	}
-
+	logEvent(7, "CurrenciesUpdate", 400, "Currencies updated "+string(rune(day)), 0)
 	time.Sleep(time.Until(nextTime))
 
 	go currencyHourTimer()
