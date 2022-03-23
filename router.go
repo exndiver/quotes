@@ -15,8 +15,7 @@ import (
 	"github.com/gorilla/mux"
 )
 
-
-// DefaultPage - Very Default responce
+// DefaultPage - Default responce
 func DefaultPage(w http.ResponseWriter, r *http.Request) (int, string, int, string, string) {
 	mn := "Default"
 	level := 6

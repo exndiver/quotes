@@ -25,7 +25,6 @@ type Conf struct {
 	CacheDuration       string
 	LogLoadRatesInfo    bool
 	Stocks              map[string]StockProps
-	HistoryOldMethod    bool
 	MinLogLevel         int
 }
 
@@ -76,7 +75,6 @@ func defaultConfig() Conf {
 	Config.Plugins.OpenExRates = false
 	Config.DownloadRates = true
 	Config.LogLoadRatesInfo = false
-	Config.HistoryOldMethod = true
 	Config.Feedback.Type = "telegram"
 	Config.MinLogLevel = 6
 	return Config

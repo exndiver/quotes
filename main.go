@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/exndiver/cache"
@@ -53,14 +54,14 @@ func currencyHourTimer() {
 	nextTime = nextTime.Add(time.Hour * d)
 
 	if (day == 0) || (day == 6) {
-		logEvent(7, "CurrenciesUpdate", 400, "Skip update. It is weekend: day "+string(rune(day)), 0)
+		logEvent(7, "CurrenciesUpdate", 400, "Skip update. It is weekend: day "+strconv.Itoa(day), 0)
 	} else {
 		// Check plugins and Update
 
 		if Config.Plugins.OpenExRates {
 			openexchangerates()
 		}
-		logEvent(7, "CurrenciesUpdate", 400, "Currencies updated "+string(rune(day)), 0)
+		logEvent(7, "CurrenciesUpdate", 400, "Currencies updated "+strconv.Itoa(day), 0)
 	}
 	time.Sleep(time.Until(nextTime))
 	go currencyHourTimer()
