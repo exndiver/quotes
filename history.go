@@ -113,6 +113,7 @@ func historyInsert(p string) {
 		logError("historyInsert - DB connection is lost! : "+p, errPing.Error(), 3)
 		return
 	}
+	removeHistoryDate(p)
 	switch p {
 	case "d":
 		c = "History"
