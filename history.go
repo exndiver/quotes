@@ -12,10 +12,10 @@ func historyDBUpdate() {
 	if historyCountInDb() > 0 {
 		historyRemoveTodayFromDB()
 		historyInsertInDB()
-		historyInsertInDB1H()
+		historyInsert("h")
 	} else {
 		historyInsertInDB()
-		historyInsertInDB1H()
+		historyInsert("h")
 	}
 }
 
@@ -72,9 +72,18 @@ func historyInsertInDB() {
 	logEvent(7, "History added", 200, "", elapsed)
 }
 
-func historyStructToDB_1h() []interface{} {
+func getHistoryStruct(p string) []interface{} {
+	var f string
+	switch p {
+	case "d":
+		f = "01-02-2006"
+	case "h":
+		f = "01-02-2006 15:02:00"
+	default:
+		f = "01-02-2006"
+	}
 	var day = int(time.Now().Weekday())
-	var d, _ = time.Parse("01-02-2006 15:02:00", time.Now().Format("01-02-2006 15:02:00"))
+	var d, _ = time.Parse(f, time.Now().Format(f))
 	var h []interface{}
 	for _, cur := range QutesinMemory {
 		var n HistoryQuote
@@ -83,7 +92,7 @@ func historyStructToDB_1h() []interface{} {
 		n.Rate = cur.Rate
 		n.Date = d
 		if cur.Category != 1 {
-			if (day == 12) || (day == 11) {
+			if (day == 0) || (day == 6) {
 				continue
 			}
 		}
@@ -92,22 +101,69 @@ func historyStructToDB_1h() []interface{} {
 	return h
 }
 
-func historyInsertInDB1H() {
+// Insert or update history record; p - period (d - day, h  hour)
+func historyInsert(p string) {
+	// Collection name based on period p
+	var c string
 	start := time.Now()
-	h := historyStructToDB_1h()
+	h := getHistoryStruct(p)
 	errPing := client.Ping(context.TODO(), nil)
 	if errPing != nil {
 		client = dbConnect()
-		logError("historyInsertInDB1H - DB connection is lost!", errPing.Error(), 3)
+		logError("historyInsert - DB connection is lost! : "+p, errPing.Error(), 3)
 		return
 	}
-	collection := client.Database("Quotes").Collection("History_1h")
+	switch p {
+	case "d":
+		c = "History"
+	case "h":
+		c = "History_1h"
+	default:
+		c = "History"
+	}
+	collection := client.Database("Quotes").Collection(c)
 	_, err := collection.InsertMany(context.TODO(), h)
 	if err != nil {
-		logError("DB problem!", err.Error(), 2)
+		logError("DB problem! : "+p, err.Error(), 2)
 	}
 	elapsed := int64(time.Since(start) / time.Millisecond)
-	logEvent(7, "History 1H added", 200, "", elapsed)
+	logEvent(7, "historyInsert", 200, "History inserted "+p, elapsed)
+}
+
+func removeHistoryDate(p string) {
+	start := time.Now()
+	var c string
+	var f string
+	switch p {
+	case "d":
+		c = "History"
+		f = "01-02-2006"
+	case "h":
+		c = "History_1h"
+		f = "01-02-2006 15:02:00"
+	default:
+		c = "History"
+		f = "01-02-2006"
+	}
+	var d, _ = time.Parse(f, time.Now().Format(f))
+	errPing := client.Ping(context.TODO(), nil)
+	if errPing != nil {
+		client = dbConnect()
+		logError("removeHistoryDate - DB connection is lost!", errPing.Error(), 3)
+	}
+	collection := client.Database("Quotes").Collection(c)
+	filter := bson.D{
+		primitive.E{Key: "date", Value: d},
+	}
+	_, errDel := collection.DeleteMany(context.TODO(), filter)
+	if errDel != nil {
+		logError("DB problem!", errDel.Error(), 2)
+		return
+	}
+
+	elapsed := int64(time.Since(start) / time.Millisecond)
+	logEvent(7, "removeHistoryDate", 200, "History removed "+c+" "+f, elapsed)
+
 }
 
 func historyRemoveTodayFromDB() {
