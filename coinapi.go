@@ -37,7 +37,7 @@ func getCrypto() {
 	res, err := client.Do(req)
 	if err != nil {
 		d := int64(time.Since(start) / time.Millisecond)
-		logEvent(4, "loadOpenExchangerates", 500, "Error parsing JSON openexchangerates.org: "+err.Error(), d)
+		logEvent(4, "loadCrypto", 500, "Error parsing JSON openexchangerates.org: "+err.Error(), d)
 		return
 	}
 	defer res.Body.Close()
@@ -45,13 +45,13 @@ func getCrypto() {
 	body, err := io.ReadAll(res.Body)
 	if err != nil {
 		d := int64(time.Since(start) / time.Millisecond)
-		logEvent(4, "loadOpenExchangerates", 500, "Error parsing JSON openexchangerates.org: "+err.Error(), d)
+		logEvent(4, "loadCrypto", 500, "Error parsing JSON openexchangerates.org: "+err.Error(), d)
 		return
 	}
 
 	if err := json.Unmarshal(body, &C); err != nil {
 		d := int64(time.Since(start) / time.Millisecond)
-		logEvent(4, "loadOpenExchangerates", 500, "Error parsing JSON openexchangerates.org: "+err.Error(), d)
+		logEvent(4, "loadCrypto", 500, "Error parsing JSON openexchangerates.org: "+err.Error(), d)
 		return
 	}
 
