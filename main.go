@@ -81,8 +81,8 @@ func updateQuotesCryptocurrenciesInDB() {
 		getCrypto()
 	}
 
-	nextTime := time.Now().Truncate(time.Minute * 1)
-	nextTime = nextTime.Add(time.Minute * 1)
+	nextTime := time.Now().Truncate(time.Minute * 5)
+	nextTime = nextTime.Add(time.Minute * 5)
 	time.Sleep(time.Until(nextTime))
 	go updateQuotesCryptocurrenciesInDB()
 }
@@ -115,8 +115,8 @@ func serverPrep() {
 func main() {
 
 	storage = memory.NewStorage()
-	serverPrep()
 
+	serverPrep()
 	if Config.DownloadRates {
 		fmt.Printf("Downloading quotes..\n")
 		go currencyHourTimer()

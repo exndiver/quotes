@@ -2,7 +2,7 @@ package main
 
 import (
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"strings"
 	"time"
@@ -25,7 +25,7 @@ func openexchangerates() {
 
 	defer resp.Body.Close()
 
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		d := int64(time.Since(start) / time.Millisecond)
 		logEvent(4, "loadOpenExchangerates", 500, "Error parsing JSON openexchangerates.org: "+err.Error(), d)

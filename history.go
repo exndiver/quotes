@@ -13,26 +13,6 @@ func historyDBUpdate() {
 	historyInsert("d")
 }
 
-func historyStructToDB() []interface{} {
-	var day = int(time.Now().Weekday())
-	var d, _ = time.Parse("01-02-2006", time.Now().Format("01-02-2006"))
-	var h []interface{}
-	for _, cur := range QutesinMemory {
-		var n HistoryQuote
-		n.Symbol = cur.Symbol
-		n.Category = cur.Category
-		n.Rate = cur.Rate
-		n.Date = d
-		if cur.Category != 1 {
-			if (day == 0) || (day == 6) {
-				continue
-			}
-		}
-		h = append(h, &n)
-	}
-	return h
-}
-
 // Insert or update history record; p - period (d - day, h  hour)
 func historyInsert(p string) {
 	// Collection name based on period p

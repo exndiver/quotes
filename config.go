@@ -17,6 +17,7 @@ type Conf struct {
 	Plugins             Plugins
 	DefaultLocale       string
 	Cryptoapilist       map[string]string
+	Coinapi             map[string]string
 	OpenExRateCurList   string
 	OpenExRateMetalList string
 	OpenExRateLink      string
@@ -35,7 +36,7 @@ type Feedback struct {
 	Telegram    Telegram
 }
 
-//Telegram - config for feedback
+// Telegram - config for feedback
 type Telegram struct {
 	ChatID   string
 	BotToken string

@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"time"
 )
@@ -20,7 +20,7 @@ func stockRate() {
 				return
 			}
 			defer resp.Body.Close()
-			body, err := ioutil.ReadAll(resp.Body)
+			body, err := io.ReadAll(resp.Body)
 			if err != nil {
 				d := int64(time.Since(start) / time.Millisecond)
 				logEvent(4, "loadStocks", 500, "Error parsing JSON stocks "+v.Host+": "+err.Error(), d)
@@ -34,7 +34,7 @@ func stockRate() {
 					q, status = getEURates(v.Currency, body)
 					if !status {
 						d := int64(time.Since(start) / time.Millisecond)
-						logEvent(4, "loadStocks", 500, "Error parsing JSON stocks "+v.Host+": "+err.Error(), d)
+						logEvent(4, "loadStocks", 500, "Error parsing JSON stocks "+v.Host+": ", d)
 						continue
 					}
 				}

@@ -92,7 +92,7 @@ func getTitles(w http.ResponseWriter, r *http.Request) (int, string, int, string
 	return code, mn, level, string(resp), rbody
 }
 
-//GetHistory method
+// GetHistory method
 // Ecample /api/GetHistory/30/0/RUB
 func getHistoryCache(w http.ResponseWriter, r *http.Request) (int, string, int, string, string) {
 	mn := "GetHistory"
@@ -221,7 +221,7 @@ func updateSubscription(w http.ResponseWriter, r *http.Request) (int, string, in
 	_ = json.NewDecoder(r.Body).Decode(&s)
 	if (s.Token != "") && (s.DeviceID != "") {
 		w.Write(resp)
-		updSub(s)
+		//	updSub(s)
 	} else {
 		level = 4
 		code = http.StatusForbidden
