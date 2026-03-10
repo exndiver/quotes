@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -11,6 +12,8 @@ import (
 	"github.com/exndiver/feedback"
 	"github.com/exndiver/feedback/googlesheet"
 	"github.com/exndiver/feedback/telegram"
+
+	"quotes/fuel"
 
 	"github.com/gorilla/mux"
 )
@@ -229,5 +232,59 @@ func updateSubscription(w http.ResponseWriter, r *http.Request) (int, string, in
 		w.WriteHeader(code)
 		w.Write(resp)
 	}
+	return code, mn, level, string(resp), rbody
+}
+
+func getFuelPricesAPI(w http.ResponseWriter, r *http.Request) (int, string, int, string, string) {
+	mn := "GetFuelPrices"
+	level := 6
+	code := http.StatusOK
+	rbody := ""
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Content-Type", "application/json")
+
+	vars := mux.Vars(r)
+	country := vars["country"]
+
+	// Using the DB from the fuel package
+	fuelDB := fuel.NewDB(client, "Quotes")
+	prices, err := fuelDB.GetPrices(context.Background(), country)
+	if err != nil {
+		code = http.StatusInternalServerError
+		w.WriteHeader(code)
+		return code, mn, 3, err.Error(), rbody
+	}
+
+	resp, _ := json.Marshal(prices)
+	w.Write(resp)
+	return code, mn, level, string(resp), rbody
+}
+
+func getFuelHistoryAPI(w http.ResponseWriter, r *http.Request) (int, string, int, string, string) {
+	mn := "GetFuelHistory"
+	level := 6
+	code := http.StatusOK
+	rbody := ""
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Content-Type", "application/json")
+
+	vars := mux.Vars(r)
+	country := vars["country"]
+	fuelType := vars["type"]
+	limit, _ := strconv.Atoi(vars["limit"])
+	if limit <= 0 {
+		limit = 30
+	}
+
+	fuelDB := fuel.NewDB(client, "Quotes")
+	history, err := fuelDB.GetHistory(context.Background(), country, fuelType, limit)
+	if err != nil {
+		code = http.StatusInternalServerError
+		w.WriteHeader(code)
+		return code, mn, 3, err.Error(), rbody
+	}
+
+	resp, _ := json.Marshal(history)
+	w.Write(resp)
 	return code, mn, level, string(resp), rbody
 }

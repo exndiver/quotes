@@ -1,12 +1,15 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
 	"strconv"
 	"time"
+
+	"quotes/fuel"
 
 	"github.com/exndiver/cache"
 	"github.com/exndiver/cache/memory"
@@ -24,6 +27,9 @@ var Config = getConfig()
 var Locales = loadLocales()
 
 var client = dbConnect()
+
+// FuelOrchestrator - global instance for fuel price collection
+var FuelOrchestrator *fuel.Orchestrator
 
 // Quote - Struct for qoute
 type Quote struct {
@@ -100,6 +106,7 @@ func serverPrep() {
 	fmt.Printf("Load all quotes from db\n")
 	getAllElementsinMemory()
 	if Config.DownloadRates {
+		fmt.Printf("Initial currency update started..\n")
 		stockRate()
 		if Config.Plugins.OpenExRates {
 			openexchangerates()
@@ -107,7 +114,20 @@ func serverPrep() {
 		if Config.Plugins.Crypto {
 			getCrypto()
 		}
+		fmt.Printf("Currencies updated\n")
 	}
+
+	// Initialize Fuel Orchestrator
+	fuelCfg, err := fuel.LoadConfig("config/fuel.json")
+	if err != nil {
+		fmt.Printf("Error loading fuel config: %v\n", err)
+	} else {
+		FuelOrchestrator = fuel.NewOrchestrator(fuelCfg, client, "Quotes")
+		fmt.Printf("Initial fuel price update started..\n")
+		FuelOrchestrator.Run(context.Background()) // Sync run
+		fmt.Printf("Fuel prices updated\n")
+	}
+
 	d := int64(time.Since(start) / time.Millisecond)
 	fmt.Printf("Server was prepared in %dms\n", d)
 }
@@ -118,12 +138,16 @@ func main() {
 
 	serverPrep()
 	if Config.DownloadRates {
-		fmt.Printf("Downloading quotes..\n")
+		fmt.Printf("Starting periodic background updates..\n")
 		go currencyHourTimer()
 		go updateStocks()
 		go updateQuotesCryptocurrenciesInDB()
 	} else {
-		fmt.Printf("Downloading is swithced off..\n")
+		fmt.Printf("Downloading is switched off..\n")
+	}
+
+	if FuelOrchestrator != nil {
+		FuelOrchestrator.StartPeriodicUpdates(context.Background())
 	}
 
 	go reloadCurrenciesInMemoryAsync()
@@ -147,6 +171,10 @@ func main() {
 	r.Handle("/api/Subscribe", logger(subscribe)).Methods("POST")
 
 	r.Handle("/api/UpdateSubscription", logger(updateSubscription)).Methods("POST")
+
+	r.Handle("/api/Fuel/Prices", logger(getFuelPricesAPI)).Methods("GET")
+	r.Handle("/api/Fuel/Prices/{country}", logger(getFuelPricesAPI)).Methods("GET")
+	r.Handle("/api/Fuel/History/{country}/{type}/{limit}", logger(getFuelHistoryAPI)).Methods("GET")
 
 	fmt.Printf("Starting server...\n")
 
