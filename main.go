@@ -176,6 +176,8 @@ func main() {
 	r.Handle("/api/Fuel/Prices/{country}", logger(getFuelPricesAPI)).Methods("GET")
 	r.Handle("/api/Fuel/History/{country}/{type}/{limit}", logger(getFuelHistoryAPI)).Methods("GET")
 
+	r.Handle("/api/GetCountries", logger(getCountriesAPI)).Methods("GET")
+
 	fmt.Printf("Starting server...\n")
 
 	log.Print(http.ListenAndServe(Config.Hosts.Service, handlers.CORS(handlers.AllowedOrigins([]string{"*"}))(r)))

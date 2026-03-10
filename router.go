@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -287,4 +288,23 @@ func getFuelHistoryAPI(w http.ResponseWriter, r *http.Request) (int, string, int
 	resp, _ := json.Marshal(history)
 	w.Write(resp)
 	return code, mn, level, string(resp), rbody
+}
+
+func getCountriesAPI(w http.ResponseWriter, r *http.Request) (int, string, int, string, string) {
+	mn := "GetCountries"
+	level := 6
+	code := http.StatusOK
+	rbody := ""
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+
+	data, err := os.ReadFile("config/countries.json")
+	if err != nil {
+		code = http.StatusInternalServerError
+		w.WriteHeader(code)
+		return code, mn, 3, err.Error(), rbody
+	}
+
+	w.Write(data)
+	return code, mn, level, string(data), rbody
 }
