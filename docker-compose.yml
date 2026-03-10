@@ -1,0 +1,32 @@
+version: '3'
+
+services:
+  quotes:
+    image: ghcr.io/exndiver/quotes:latest
+    restart: always
+    volumes:
+      - ./logs:/go/bin/logs
+      - ./config:/go/bin/config
+    ports:
+      - "8083:8083"
+    links:
+      - mongo
+    depends_on:
+      - "mongo"
+
+
+  mongo:
+    image: mongo:4.2.13
+    deploy:
+      resources:
+        limits:
+          memory: 500M
+    restart: always
+    volumes: 
+      - ./db:/data/db
+      - ./dump:/data/dump
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: quotesadm
+      MONGO_INITDB_ROOT_PASSWORD: sXqmpCZcRb4Bg

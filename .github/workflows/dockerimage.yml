@@ -9,12 +9,19 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      packages: write
+
     steps:
-    - uses: actions/checkout@v2
-    - name: Build the Docker image
-      run: docker build . --file Dockerfile --tag docker.pkg.github.com/exndiver/quotes/quotes
-    - name: Push build
-      run:  |
-        echo ${{secrets.GHACT}} | docker login docker.pkg.github.com -u ${{secrets.GHUSUP}} --password-stdin
-        docker tag "docker.pkg.github.com/exndiver/quotes/quotes:latest" "docker.pkg.github.com/exndiver/quotes/quotes:$(date +%s)"
-        docker push docker.pkg.github.com/exndiver/quotes/quotes 
+      - uses: actions/checkout@v3
+
+      - name: Login to GHCR
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+      - name: Build image
+        run: docker build . -t ghcr.io/exndiver/quotes:latest
+
+      - name: Push image
+        run: docker push ghcr.io/exndiver/quotes:latest
