@@ -1,0 +1,174 @@
+{
+    "sources": {
+        "eu_oil_bulletin": {
+            "enabled": true,
+            "name": "EU Weekly Oil Bulletin",
+            "currency": "EUR"
+        }
+    },
+    "countries": [
+        {
+            "code": "AT",
+            "name": "Austria",
+            "source": "eu_oil_bulletin",
+            "enabled": true
+        },
+        {
+            "code": "BE",
+            "name": "Belgium",
+            "source": "eu_oil_bulletin",
+            "enabled": true
+        },
+        {
+            "code": "BG",
+            "name": "Bulgaria",
+            "source": "eu_oil_bulletin",
+            "enabled": true
+        },
+        {
+            "code": "CY",
+            "name": "Cyprus",
+            "source": "eu_oil_bulletin",
+            "enabled": true
+        },
+        {
+            "code": "CZ",
+            "name": "Czechia",
+            "source": "eu_oil_bulletin",
+            "enabled": true
+        },
+        {
+            "code": "DE",
+            "name": "Germany",
+            "source": "eu_oil_bulletin",
+            "enabled": true
+        },
+        {
+            "code": "DK",
+            "name": "Denmark",
+            "source": "eu_oil_bulletin",
+            "enabled": true
+        },
+        {
+            "code": "EE",
+            "name": "Estonia",
+            "source": "eu_oil_bulletin",
+            "enabled": true
+        },
+        {
+            "code": "ES",
+            "name": "Spain",
+            "source": "eu_oil_bulletin",
+            "enabled": true
+        },
+        {
+            "code": "FI",
+            "name": "Finland",
+            "source": "eu_oil_bulletin",
+            "enabled": true
+        },
+        {
+            "code": "FR",
+            "name": "France",
+            "source": "eu_oil_bulletin",
+            "enabled": true
+        },
+        {
+            "code": "GR",
+            "name": "Greece",
+            "source": "eu_oil_bulletin",
+            "enabled": true
+        },
+        {
+            "code": "HR",
+            "name": "Croatia",
+            "source": "eu_oil_bulletin",
+            "enabled": true
+        },
+        {
+            "code": "HU",
+            "name": "Hungary",
+            "source": "eu_oil_bulletin",
+            "enabled": true
+        },
+        {
+            "code": "IE",
+            "name": "Ireland",
+            "source": "eu_oil_bulletin",
+            "enabled": true
+        },
+        {
+            "code": "IT",
+            "name": "Italy",
+            "source": "eu_oil_bulletin",
+            "enabled": true
+        },
+        {
+            "code": "LT",
+            "name": "Lithuania",
+            "source": "eu_oil_bulletin",
+            "enabled": true
+        },
+        {
+            "code": "LU",
+            "name": "Luxembourg",
+            "source": "eu_oil_bulletin",
+            "enabled": true
+        },
+        {
+            "code": "LV",
+            "name": "Latvia",
+            "source": "eu_oil_bulletin",
+            "enabled": true
+        },
+        {
+            "code": "MT",
+            "name": "Malta",
+            "source": "eu_oil_bulletin",
+            "enabled": true
+        },
+        {
+            "code": "NL",
+            "name": "Netherlands",
+            "source": "eu_oil_bulletin",
+            "enabled": true
+        },
+        {
+            "code": "PL",
+            "name": "Poland",
+            "source": "eu_oil_bulletin",
+            "enabled": true
+        },
+        {
+            "code": "PT",
+            "name": "Portugal",
+            "source": "eu_oil_bulletin",
+            "enabled": true
+        },
+        {
+            "code": "RO",
+            "name": "Romania",
+            "source": "eu_oil_bulletin",
+            "enabled": true
+        },
+        {
+            "code": "SE",
+            "name": "Sweden",
+            "source": "eu_oil_bulletin",
+            "enabled": true
+        },
+        {
+            "code": "SI",
+            "name": "Slovenia",
+            "source": "eu_oil_bulletin",
+            "enabled": true
+        },
+        {
+            "code": "SK",
+            "name": "Slovakia",
+            "source": "eu_oil_bulletin",
+            "enabled": true
+        }
+    ],
+    "update_interval": "24h"
+}
