@@ -26,6 +26,12 @@ func NewOrchestrator(config *FuelConfig, client *mongo.Client, dbName string) *O
 	// Register sources
 	orc.RegisterSource(sources.NewEUWeeklyOilBulletin())
 	orc.RegisterSource(sources.NewUkraineMinfin())
+	orc.RegisterSource(sources.NewUKGov())
+	orc.RegisterSource(sources.NewThailandPTTOR())
+	orc.RegisterSource(sources.NewGeorgiaWissol())
+	orc.RegisterSource(sources.NewRussiaGlobalPetrolPrices())
+	orc.RegisterSource(sources.NewUSAGlobalPetrolPrices())
+	orc.RegisterSource(sources.NewGPP())
 
 	return orc
 }
@@ -59,6 +65,17 @@ func (o *Orchestrator) Run(ctx context.Context) {
 			continue
 		}
 
+		// Throttle: delay after each request for this source (e.g. GPP once per day spread)
+		if srcCfg, ok := o.config.Sources[country.Source]; ok && srcCfg.RequestDelaySeconds > 0 {
+			delay := time.Duration(srcCfg.RequestDelaySeconds) * time.Second
+			log.Printf("Throttle: waiting %v before next %s request", delay, source.Name())
+			select {
+			case <-time.After(delay):
+			case <-ctx.Done():
+				return
+			}
+		}
+
 		// Replace all prices for this country/source to avoid duplicates after renaming fuel types
 		if err := o.db.DeletePricesForCountrySource(ctx, country.Code, source.Name()); err != nil {
 			log.Printf("Warning: could not delete old prices for %s %s: %v", country.Code, source.Name(), err)
@@ -80,10 +97,13 @@ func (o *Orchestrator) Run(ctx context.Context) {
 						priceUSD = raw.Price * rateUSD
 						log.Printf("Converted %s price %f EUR to %f USD (rate %f)", raw.Country, raw.Price, priceUSD, rateUSD)
 					} else {
-						// For other currencies, we'd need their rate too
+						// For other currencies (GBP, UAH, etc.) we need their rate
 						rateCurrent, err := o.db.GetRate(ctx, raw.Currency)
 						if err == nil && rateCurrent > 0 {
 							priceUSD = raw.Price / rateCurrent * rateUSD
+							log.Printf("Converted %s price %f %s to %f USD (rate %s=%f)", raw.Country, raw.Price, raw.Currency, priceUSD, raw.Currency, rateCurrent)
+						} else {
+							log.Printf("Warning: no rate for %s (%s), cannot convert %s price to USD", raw.Currency, raw.Country, raw.Currency)
 						}
 					}
 				} else {

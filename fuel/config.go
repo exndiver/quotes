@@ -14,9 +14,10 @@ type FuelConfig struct {
 
 // SourceConfig defines a price source status and details
 type SourceConfig struct {
-	Enabled  bool   `json:"enabled"`
-	Name     string `json:"name"`
-	Currency string `json:"currency"`
+	Enabled               bool   `json:"enabled"`
+	Name                  string `json:"name"`
+	Currency              string `json:"currency"`
+	RequestDelaySeconds   int    `json:"request_delay_seconds,omitempty"` // delay after each request (e.g. to avoid rate limit)
 }
 
 // CountryConfig links a country to a source and status
