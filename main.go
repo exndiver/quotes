@@ -123,9 +123,11 @@ func serverPrep() {
 		fmt.Printf("Error loading fuel config: %v\n", err)
 	} else {
 		FuelOrchestrator = fuel.NewOrchestrator(fuelCfg, client, "Quotes")
-		fmt.Printf("Initial fuel price update started..\n")
-		FuelOrchestrator.Run(context.Background()) // Sync run
-		fmt.Printf("Fuel prices updated\n")
+		fmt.Printf("Initial fuel price update started (background)..\n")
+		go func() {
+			FuelOrchestrator.Run(context.Background())
+			fmt.Printf("Fuel prices updated\n")
+		}()
 	}
 
 	d := int64(time.Since(start) / time.Millisecond)
