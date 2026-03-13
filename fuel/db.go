@@ -22,6 +22,14 @@ func NewDB(client *mongo.Client, dbName string) *DB {
 	}
 }
 
+// DeletePricesForCountrySource removes all fuel price documents for the given country and source.
+// Call before saving a full batch to avoid duplicates when renaming fuel types.
+func (d *DB) DeletePricesForCountrySource(ctx context.Context, country, source string) error {
+	collection := d.client.Database(d.dbName).Collection("FuelPrices")
+	_, err := collection.DeleteMany(ctx, bson.M{"country": country, "source": source})
+	return err
+}
+
 // SavePrice updates the current fuel price in the database
 func (d *DB) SavePrice(ctx context.Context, price FuelPrice) error {
 	collection := d.client.Database(d.dbName).Collection("FuelPrices")

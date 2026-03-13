@@ -25,6 +25,7 @@ func NewOrchestrator(config *FuelConfig, client *mongo.Client, dbName string) *O
 
 	// Register sources
 	orc.RegisterSource(sources.NewEUWeeklyOilBulletin())
+	orc.RegisterSource(sources.NewUkraineMinfin())
 
 	return orc
 }
@@ -56,6 +57,11 @@ func (o *Orchestrator) Run(ctx context.Context) {
 		if err != nil {
 			log.Printf("Error fetching prices for %s: %v", country.Name, err)
 			continue
+		}
+
+		// Replace all prices for this country/source to avoid duplicates after renaming fuel types
+		if err := o.db.DeletePricesForCountrySource(ctx, country.Code, source.Name()); err != nil {
+			log.Printf("Warning: could not delete old prices for %s %s: %v", country.Code, source.Name(), err)
 		}
 
 		for _, raw := range rawPrices {

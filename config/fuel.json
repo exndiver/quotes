@@ -4,6 +4,11 @@
             "enabled": true,
             "name": "EU Weekly Oil Bulletin",
             "currency": "EUR"
+        },
+        "ua_minfin": {
+            "enabled": true,
+            "name": "Ukraine Minfin Fuel",
+            "currency": "UAH"
         }
     },
     "countries": [
@@ -167,6 +172,12 @@
             "code": "SK",
             "name": "Slovakia",
             "source": "eu_oil_bulletin",
+            "enabled": true
+        },
+        {
+            "code": "UA",
+            "name": "Ukraine",
+            "source": "ua_minfin",
             "enabled": true
         }
     ],
