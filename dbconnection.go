@@ -73,6 +73,27 @@ func getAllElementsinMemory() {
 	cur.Close(context.TODO())
 }
 
+// getRateFromDB возвращает Rate для пары symbol+category (например USD, 0). ok=false если не найден.
+func getRateFromDB(symbol string, category int) (rate float64, ok bool) {
+	errPing := client.Ping(context.TODO(), nil)
+	if errPing != nil {
+		client = dbConnect()
+		logError("getRateFromDB - DB connection is lost!", errPing.Error(), 3)
+		return 0, false
+	}
+	collection := client.Database("Quotes").Collection("Currencies")
+	filter := bson.D{
+		primitive.E{Key: "symbol", Value: symbol},
+		primitive.E{Key: "category", Value: category},
+	}
+	var elem Quote
+	err := collection.FindOne(context.TODO(), filter).Decode(&elem)
+	if err != nil {
+		return 0, false
+	}
+	return elem.Rate, true
+}
+
 func isElementInDB(currency Quote) bool {
 	var result []*Quote
 	errPing := client.Ping(context.TODO(), nil)

@@ -31,8 +31,9 @@ type coinGeckoPriceResp map[string]struct {
 }
 
 // getCryptoCoinGecko загружает курсы криптовалют из CoinGecko и пишет в БД.
-// Список символов берётся из Config.Coinapi["list"] (через запятую).
-// Старый парсер (getCrypto) не трогаем.
+// В БД хранится Rate = единиц крипты за 1 EUR (как у старого CoinAPI с базой EUR),
+// чтобы /api/GetRates/0/EUR возвращал «1 EUR = X BTC», а не «1 EUR = 72405 BTC».
+// Цена из CoinGecko в USD переводится в «крипта за 1 EUR»: rate = usdPerEur / priceUsd.
 func getCryptoCoinGecko() {
 	if Config.Coinapi == nil {
 		return
@@ -104,6 +105,13 @@ func getCryptoCoinGecko() {
 		idToSymbol[id] = s
 	}
 
+	// Курс USD в БД = сколько USD за 1 EUR (для конвертации цены из USD в «крипта за 1 EUR»).
+	usdPerEur, hasUSD := getRateFromDB("USD", 0)
+	if !hasUSD || usdPerEur <= 0 {
+		logEvent(4, "loadCryptoCoinGecko", 500, "USD rate not found in DB (need OpenExRates or stocks), cannot convert to EUR base", 0)
+		return
+	}
+
 	saved := 0
 	for id, v := range data {
 		sym, ok := idToSymbol[id]
@@ -113,9 +121,11 @@ func getCryptoCoinGecko() {
 		if v.Usd <= 0 {
 			continue
 		}
+		// Rate = единиц крипты за 1 EUR (1 EUR = rate BTC). price_usd за 1 монету → price_eur = price_usd/usd_per_eur → rate = 1/price_eur.
+		rate := usdPerEur / v.Usd
 		q := Quote{
 			Symbol:   sym,
-			Rate:     v.Usd,
+			Rate:     rate,
 			Category: 1,
 		}
 		if isElementInDB(q) {
