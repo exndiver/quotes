@@ -84,7 +84,7 @@ func reloadCurrenciesInMemoryAsync() {
 
 func updateQuotesCryptocurrenciesInDB() {
 	if Config.Plugins.Crypto {
-		getCrypto()
+		getCryptoCoinGecko()
 	}
 
 	nextTime := time.Now().Truncate(time.Minute * 5)
@@ -112,7 +112,7 @@ func serverPrep() {
 			openexchangerates()
 		}
 		if Config.Plugins.Crypto {
-			getCrypto()
+			getCryptoCoinGecko()
 		}
 		fmt.Printf("Currencies updated\n")
 	}
