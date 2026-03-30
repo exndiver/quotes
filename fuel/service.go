@@ -150,13 +150,17 @@ func (o *Orchestrator) StartPeriodicUpdates(ctx context.Context) {
 	}
 
 	go func() {
+		log.Printf("Fuel periodic updates enabled: interval=%v", interval)
 		ticker := time.NewTicker(interval)
 		defer ticker.Stop()
 
 		for {
 			select {
 			case <-ticker.C:
+				start := time.Now()
+				log.Printf("Fuel periodic update started")
 				o.Run(ctx)
+				log.Printf("Fuel periodic update finished in %v", time.Since(start))
 			case <-ctx.Done():
 				return
 			}
