@@ -3,6 +3,7 @@ go.mongodb.org
 db
 pkg
 config/*
+!config/titles.json
 config.json
 run
 logs.log
@@ -19,6 +20,7 @@ logs
 tests*
 test
 titles*
+!config/titles.json
 *.http
 *.code-workspace
 .DS_Store
