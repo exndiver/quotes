@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math"
 	"strings"
 	"time"
 
@@ -32,6 +33,8 @@ const (
 var (
 	ErrInvalidDevice = errors.New("invalid device")
 	ErrInvalidAlert  = errors.New("invalid alert")
+	ErrAlertNotFound = errors.New("alert not found")
+	ErrRateNotFound  = errors.New("rate not found")
 )
 
 // Device is a push notification receiver. Mongo _id is the client device_id.
@@ -88,6 +91,31 @@ func (r *AlertRepository) alerts() *mongo.Collection {
 
 func BuildAlertPair(base, target string) string {
 	return fmt.Sprintf("%s_%s", strings.ToUpper(base), strings.ToUpper(target))
+}
+
+func CalculateCurrentRate(base, target string) (float64, error) {
+	base = strings.ToUpper(base)
+	target = strings.ToUpper(target)
+	if base == "" || target == "" {
+		return 0, ErrRateNotFound
+	}
+	if base == target {
+		if _, ok := getRateFromDB(base, 0); !ok {
+			return 0, ErrRateNotFound
+		}
+		return 1, nil
+	}
+
+	baseRate, ok := getRateFromDB(base, 0)
+	if !ok || baseRate == 0 {
+		return 0, ErrRateNotFound
+	}
+	targetRate, ok := getRateFromDB(target, 0)
+	if !ok {
+		return 0, ErrRateNotFound
+	}
+
+	return math.Round((targetRate/baseRate)*10000000000) / 10000000000, nil
 }
 
 func (d Device) Validate() error {
@@ -262,6 +290,27 @@ func (r *AlertRepository) GetDeviceAlerts(ctx context.Context, deviceID string, 
 		return nil, err
 	}
 	return alerts, nil
+}
+
+func (r *AlertRepository) CountActiveAlerts(ctx context.Context, deviceID string) (int64, error) {
+	return r.alerts().CountDocuments(ctx, bson.M{
+		"device_id": deviceID,
+		"status":    AlertStatusActive,
+	})
+}
+
+func (r *AlertRepository) DeleteAlert(ctx context.Context, id primitive.ObjectID, deviceID string) error {
+	result, err := r.alerts().DeleteOne(ctx, bson.M{
+		"_id":       id,
+		"device_id": deviceID,
+	})
+	if err != nil {
+		return err
+	}
+	if result.DeletedCount == 0 {
+		return ErrAlertNotFound
+	}
+	return nil
 }
 
 func (r *AlertRepository) FindTriggeredThresholdAlerts(ctx context.Context, base, target, direction string, currentRate float64) ([]Alert, error) {

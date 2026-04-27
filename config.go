@@ -27,6 +27,8 @@ type Conf struct {
 	LogLoadRatesInfo    bool
 	Stocks              map[string]StockProps
 	MinLogLevel         int
+	AlertsActiveLimit   int     `json:"alerts_active_limit"`
+	RateMinStep         float64 `json:"rate_min_step"`
 }
 
 // Feedback - config for feedback
@@ -78,6 +80,8 @@ func defaultConfig() Conf {
 	Config.LogLoadRatesInfo = false
 	Config.Feedback.Type = "telegram"
 	Config.MinLogLevel = 6
+	Config.AlertsActiveLimit = 100
+	Config.RateMinStep = 0.01
 	return Config
 }
 

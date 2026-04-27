@@ -178,6 +178,15 @@ func main() {
 
 	r.Handle("/api/UpdateSubscription", logger(updateSubscription)).Methods("POST")
 
+	r.Handle("/device/register", logger(registerDeviceAPI)).Methods("POST")
+	r.Handle("/api/device/register", logger(registerDeviceAPI)).Methods("POST")
+	r.Handle("/alerts", logger(createAlertAPI)).Methods("POST")
+	r.Handle("/api/alerts", logger(createAlertAPI)).Methods("POST")
+	r.Handle("/alerts", logger(getAlertsAPI)).Methods("GET")
+	r.Handle("/api/alerts", logger(getAlertsAPI)).Methods("GET")
+	r.Handle("/alerts/{id}", logger(deleteAlertAPI)).Methods("DELETE")
+	r.Handle("/api/alerts/{id}", logger(deleteAlertAPI)).Methods("DELETE")
+
 	r.Handle("/api/Fuel/Prices", logger(getFuelPricesAPI)).Methods("GET")
 	r.Handle("/api/Fuel/Prices/{country}", logger(getFuelPricesAPI)).Methods("GET")
 	r.Handle("/api/Fuel/History/{country}/{type}/{limit}", logger(getFuelHistoryAPI)).Methods("GET")
