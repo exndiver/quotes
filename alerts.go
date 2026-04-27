@@ -313,6 +313,37 @@ func (r *AlertRepository) DeleteAlert(ctx context.Context, id primitive.ObjectID
 	return nil
 }
 
+func (r *AlertRepository) UpdateThresholdAlert(ctx context.Context, id primitive.ObjectID, deviceID, base, target string, value float64, direction string) (*Alert, error) {
+	now := time.Now().UTC()
+	filter := bson.M{
+		"_id":       id,
+		"device_id": deviceID,
+		"type":      AlertTypeThreshold,
+	}
+	update := bson.M{
+		"$set": bson.M{
+			"base":       strings.ToUpper(base),
+			"target":     strings.ToUpper(target),
+			"pair":       BuildAlertPair(base, target),
+			"value":      value,
+			"direction":  direction,
+			"status":     AlertStatusActive,
+			"updated_at": now,
+		},
+		"$unset": bson.M{
+			"triggered_at": "",
+			"trigger_rate": "",
+		},
+	}
+	opts := options.FindOneAndUpdate().SetReturnDocument(options.After)
+
+	var alert Alert
+	if err := r.alerts().FindOneAndUpdate(ctx, filter, update, opts).Decode(&alert); err != nil {
+		return nil, err
+	}
+	return &alert, nil
+}
+
 func (r *AlertRepository) FindTriggeredThresholdAlerts(ctx context.Context, base, target, direction string, currentRate float64) ([]Alert, error) {
 	valueFilter := bson.M{"$lte": currentRate}
 	if direction == AlertDirectionDown {

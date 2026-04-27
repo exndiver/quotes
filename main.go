@@ -184,6 +184,8 @@ func main() {
 	r.Handle("/api/alerts", logger(createAlertAPI)).Methods("POST")
 	r.Handle("/alerts", logger(getAlertsAPI)).Methods("GET")
 	r.Handle("/api/alerts", logger(getAlertsAPI)).Methods("GET")
+	r.Handle("/alerts/{id}", logger(updateAlertAPI)).Methods("PUT")
+	r.Handle("/api/alerts/{id}", logger(updateAlertAPI)).Methods("PUT")
 	r.Handle("/alerts/{id}", logger(deleteAlertAPI)).Methods("DELETE")
 	r.Handle("/api/alerts/{id}", logger(deleteAlertAPI)).Methods("DELETE")
 

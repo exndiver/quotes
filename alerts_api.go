@@ -35,6 +35,20 @@ type createAlertResponse struct {
 	ActiveAlertsCount int64   `json:"active_alerts_count"`
 }
 
+type updateAlertRequest struct {
+	DeviceID string  `json:"device_id"`
+	Base     string  `json:"base"`
+	Target   string  `json:"target"`
+	Value    float64 `json:"value"`
+}
+
+type updateAlertResponse struct {
+	ID          string  `json:"id"`
+	Status      string  `json:"status"`
+	Direction   string  `json:"direction"`
+	CurrentRate float64 `json:"current_rate"`
+}
+
 type deleteAlertRequest struct {
 	DeviceID string `json:"device_id"`
 }
@@ -193,6 +207,63 @@ func getAlertsAPI(w http.ResponseWriter, r *http.Request) (int, string, int, str
 	}
 
 	resp := writeAlertJSON(w, code, alerts)
+	return code, mn, level, string(resp), rbody
+}
+
+func updateAlertAPI(w http.ResponseWriter, r *http.Request) (int, string, int, string, string) {
+	mn := "UpdateAlert"
+	level := 6
+	code := http.StatusOK
+
+	id, err := primitive.ObjectIDFromHex(mux.Vars(r)["id"])
+	if err != nil {
+		code = http.StatusBadRequest
+		resp := writeAlertAPIError(w, code, "INVALID_ALERT_ID")
+		return code, mn, 4, string(resp), ""
+	}
+
+	var req updateAlertRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		code = http.StatusBadRequest
+		resp := writeAlertAPIError(w, code, "BAD_REQUEST")
+		return code, mn, 4, string(resp), ""
+	}
+	req.Base = strings.ToUpper(req.Base)
+	req.Target = strings.ToUpper(req.Target)
+	rbodyB, _ := json.Marshal(req)
+	rbody := string(rbodyB)
+
+	if req.DeviceID == "" || req.Base == "" || req.Target == "" || req.Value <= 0 {
+		code = http.StatusBadRequest
+		resp := writeAlertAPIError(w, code, "INVALID_ALERT")
+		return code, mn, 4, string(resp), rbody
+	}
+
+	currentRate, err := CalculateCurrentRate(req.Base, req.Target)
+	if err != nil {
+		code = http.StatusBadRequest
+		resp := writeAlertAPIError(w, code, "RATE_NOT_FOUND")
+		return code, mn, 4, string(resp), rbody
+	}
+
+	direction := AlertDirectionDown
+	if req.Value > currentRate {
+		direction = AlertDirectionUp
+	}
+
+	alert, err := NewAlertRepository(client).UpdateThresholdAlert(context.Background(), id, req.DeviceID, req.Base, req.Target, req.Value, direction)
+	if err != nil {
+		code = http.StatusNotFound
+		resp := writeAlertAPIError(w, code, "ALERT_NOT_FOUND")
+		return code, mn, 4, string(resp), rbody
+	}
+
+	resp := writeAlertJSON(w, code, updateAlertResponse{
+		ID:          alert.ID.Hex(),
+		Status:      alert.Status,
+		Direction:   alert.Direction,
+		CurrentRate: currentRate,
+	})
 	return code, mn, level, string(resp), rbody
 }
 

@@ -74,6 +74,21 @@ Schedule alerts use the same rate calculation. For one-time schedules, `schedule
 
 Optional filter: `status=active`.
 
+### Update Alert
+
+`PUT /alerts/{id}`
+
+```json
+{
+  "device_id": "uuid-123",
+  "base": "USD",
+  "target": "EUR",
+  "value": 0.86
+}
+```
+
+The server updates an existing threshold alert only when it belongs to the provided `device_id`. It recalculates `current_rate`, `direction`, and `pair`, then sets the alert back to `active`. Unlike creation, update accepts the provided value as-is so users can edit an existing alert to the current UI step.
+
 ### Delete Alert
 
 `DELETE /alerts/{id}?device_id=uuid-123`
