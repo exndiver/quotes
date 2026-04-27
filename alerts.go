@@ -7,6 +7,7 @@ import (
 	"math"
 	"strings"
 	"time"
+	_ "time/tzdata"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -15,19 +16,19 @@ import (
 )
 
 const (
-	alertsDBName           = "Quotes"
-	devicesCollectionName  = "devices"
-	alertsCollectionName   = "alerts"
-	AlertTypeThreshold     = "threshold"
-	AlertTypeSchedule      = "schedule"
-	AlertStatusActive      = "active"
-	AlertStatusTriggered   = "triggered"
-	AlertDirectionUp       = "up"
-	AlertDirectionDown     = "down"
-	AlertScheduleOnce      = "once"
-	AlertScheduleRecurring = "recurring"
-	DevicePlatformIOS      = "ios"
-	DevicePlatformAndroid  = "android"
+	alertsDBName          = "Quotes"
+	devicesCollectionName = "devices"
+	alertsCollectionName  = "alerts"
+	AlertTypeThreshold    = "threshold"
+	AlertTypeSchedule     = "schedule"
+	AlertStatusActive     = "active"
+	AlertStatusTriggered  = "triggered"
+	AlertDirectionUp      = "up"
+	AlertDirectionDown    = "down"
+	AlertScheduleOnce     = "once"
+	AlertScheduleWeekly   = "weekly"
+	DevicePlatformIOS     = "ios"
+	DevicePlatformAndroid = "android"
 )
 
 var (
@@ -61,7 +62,10 @@ type Alert struct {
 	Direction    string             `bson:"direction,omitempty" json:"direction,omitempty"`
 	ScheduleType string             `bson:"schedule_type,omitempty" json:"schedule_type,omitempty"`
 	ScheduledAt  *time.Time         `bson:"scheduled_at,omitempty" json:"scheduled_at,omitempty"`
-	IntervalDays int                `bson:"interval_days,omitempty" json:"interval_days,omitempty"`
+	DaysOfWeek   []int              `bson:"days_of_week,omitempty" json:"days_of_week,omitempty"`
+	Hour         *int               `bson:"hour,omitempty" json:"hour,omitempty"`
+	Timezone     string             `bson:"timezone,omitempty" json:"timezone,omitempty"`
+	NextRunAt    *time.Time         `bson:"next_run_at,omitempty" json:"next_run_at,omitempty"`
 	LastSentAt   *time.Time         `bson:"last_sent_at,omitempty" json:"last_sent_at,omitempty"`
 	TriggeredAt  *time.Time         `bson:"triggered_at,omitempty" json:"triggered_at,omitempty"`
 	TriggerRate  float64            `bson:"trigger_rate,omitempty" json:"trigger_rate,omitempty"`
@@ -118,6 +122,51 @@ func CalculateCurrentRate(base, target string) (float64, error) {
 	return math.Round((targetRate/baseRate)*10000000000) / 10000000000, nil
 }
 
+func CalculateNextRunAt(scheduleType string, scheduledAt *time.Time, daysOfWeek []int, hour *int, timezone string, now time.Time) (*time.Time, error) {
+	if timezone == "" {
+		return nil, ErrInvalidAlert
+	}
+	location, err := time.LoadLocation(timezone)
+	if err != nil {
+		return nil, ErrInvalidAlert
+	}
+
+	switch scheduleType {
+	case AlertScheduleOnce:
+		if scheduledAt == nil || !scheduledAt.After(now) {
+			return nil, ErrInvalidAlert
+		}
+		nextRunAt := scheduledAt.UTC()
+		return &nextRunAt, nil
+	case AlertScheduleWeekly:
+		if len(daysOfWeek) == 0 || hour == nil || *hour < 0 || *hour > 23 {
+			return nil, ErrInvalidAlert
+		}
+		selectedDays := make(map[int]bool, len(daysOfWeek))
+		for _, day := range daysOfWeek {
+			if day < 0 || day > 6 {
+				return nil, ErrInvalidAlert
+			}
+			selectedDays[day] = true
+		}
+
+		localNow := now.In(location)
+		for offset := 0; offset <= 7; offset++ {
+			candidateDate := localNow.AddDate(0, 0, offset)
+			if !selectedDays[int(candidateDate.Weekday())] {
+				continue
+			}
+			candidate := time.Date(candidateDate.Year(), candidateDate.Month(), candidateDate.Day(), *hour, 0, 0, 0, location)
+			if candidate.After(localNow) {
+				nextRunAt := candidate.UTC()
+				return &nextRunAt, nil
+			}
+		}
+	}
+
+	return nil, ErrInvalidAlert
+}
+
 func (d Device) Validate() error {
 	if d.ID == "" || d.PushToken == "" {
 		return ErrInvalidDevice
@@ -162,12 +211,20 @@ func (a Alert) Validate() error {
 		}
 	case AlertTypeSchedule:
 		if a.ScheduleType == AlertScheduleOnce {
-			if a.ScheduledAt == nil {
+			if a.ScheduledAt == nil || a.NextRunAt == nil || a.Timezone == "" {
 				return ErrInvalidAlert
 			}
-		} else if a.ScheduleType == AlertScheduleRecurring {
-			if a.IntervalDays <= 0 {
+		} else if a.ScheduleType == AlertScheduleWeekly {
+			if len(a.DaysOfWeek) == 0 || a.Hour == nil || a.NextRunAt == nil || a.Timezone == "" {
 				return ErrInvalidAlert
+			}
+			if *a.Hour < 0 || *a.Hour > 23 {
+				return ErrInvalidAlert
+			}
+			for _, day := range a.DaysOfWeek {
+				if day < 0 || day > 6 {
+					return ErrInvalidAlert
+				}
 			}
 		} else {
 			return ErrInvalidAlert
@@ -209,7 +266,7 @@ func (r *AlertRepository) EnsureIndexes(ctx context.Context) error {
 			Keys: bson.D{
 				{Key: "type", Value: 1},
 				{Key: "status", Value: 1},
-				{Key: "scheduled_at", Value: 1},
+				{Key: "next_run_at", Value: 1},
 				{Key: "last_sent_at", Value: 1},
 			},
 		},
@@ -342,6 +399,51 @@ func (r *AlertRepository) UpdateThresholdAlert(ctx context.Context, id primitive
 		return nil, err
 	}
 	return &alert, nil
+}
+
+func (r *AlertRepository) UpdateScheduleAlert(ctx context.Context, id primitive.ObjectID, deviceID string, alert Alert) (*Alert, error) {
+	now := time.Now().UTC()
+	filter := bson.M{
+		"_id":       id,
+		"device_id": deviceID,
+		"type":      AlertTypeSchedule,
+	}
+
+	set := bson.M{
+		"schedule_type": alert.ScheduleType,
+		"timezone":      alert.Timezone,
+		"next_run_at":   alert.NextRunAt,
+		"status":        AlertStatusActive,
+		"updated_at":    now,
+	}
+	unset := bson.M{
+		"triggered_at":  "",
+		"trigger_rate":  "",
+		"interval_days": "",
+	}
+
+	if alert.ScheduleType == AlertScheduleOnce {
+		set["scheduled_at"] = alert.ScheduledAt
+		unset["days_of_week"] = ""
+		unset["hour"] = ""
+	}
+	if alert.ScheduleType == AlertScheduleWeekly {
+		set["days_of_week"] = alert.DaysOfWeek
+		set["hour"] = alert.Hour
+		unset["scheduled_at"] = ""
+	}
+
+	update := bson.M{
+		"$set":   set,
+		"$unset": unset,
+	}
+	opts := options.FindOneAndUpdate().SetReturnDocument(options.After)
+
+	var updated Alert
+	if err := r.alerts().FindOneAndUpdate(ctx, filter, update, opts).Decode(&updated); err != nil {
+		return nil, err
+	}
+	return &updated, nil
 }
 
 func (r *AlertRepository) FindTriggeredThresholdAlerts(ctx context.Context, base, target, direction string, currentRate float64) ([]Alert, error) {

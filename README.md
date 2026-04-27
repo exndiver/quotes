@@ -66,7 +66,38 @@ Response:
 }
 ```
 
-Schedule alerts use the same rate calculation. For one-time schedules, `scheduled_at` must be in the future. For recurring schedules, `interval_days` must be greater than `0`.
+Schedule alerts use the same rate calculation. For one-time schedules, `scheduled_at` must be in the future. For weekly schedules, `days_of_week`, `hour`, and `timezone` are required.
+
+One-time schedule request:
+
+```json
+{
+  "device_id": "uuid-123",
+  "type": "schedule",
+  "schedule_type": "once",
+  "base": "EUR",
+  "target": "USD",
+  "scheduled_at": "2026-04-28T15:00:00Z",
+  "timezone": "Europe/Brussels"
+}
+```
+
+Weekly schedule request:
+
+```json
+{
+  "device_id": "uuid-123",
+  "type": "schedule",
+  "schedule_type": "weekly",
+  "base": "EUR",
+  "target": "USD",
+  "days_of_week": [1, 3, 5],
+  "hour": 9,
+  "timezone": "Europe/Brussels"
+}
+```
+
+Only `once` and `weekly` schedules are supported. The server validates `timezone`, calculates `next_run_at`, and stores schedule alerts as `active`.
 
 ### List Alerts
 
@@ -88,6 +119,27 @@ Optional filter: `status=active`.
 ```
 
 The server updates an existing threshold alert only when it belongs to the provided `device_id`. It recalculates `current_rate`, `direction`, and `pair`, then sets the alert back to `active`. Unlike creation, update accepts the provided value as-is so users can edit an existing alert to the current UI step.
+
+Schedule update examples:
+
+```json
+{
+  "device_id": "uuid-123",
+  "schedule_type": "once",
+  "scheduled_at": "2026-04-28T15:00:00Z",
+  "timezone": "Europe/Brussels"
+}
+```
+
+```json
+{
+  "device_id": "uuid-123",
+  "schedule_type": "weekly",
+  "days_of_week": [2, 4],
+  "hour": 18,
+  "timezone": "Europe/Brussels"
+}
+```
 
 ### Delete Alert
 
