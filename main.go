@@ -105,6 +105,10 @@ func serverPrep() {
 	start := time.Now()
 	fmt.Printf("Load all quotes from db\n")
 	getAllElementsinMemory()
+	alertRepo := NewAlertRepository(client)
+	if err := alertRepo.EnsureIndexes(context.Background()); err != nil {
+		fmt.Printf("Error ensuring alert indexes: %v\n", err)
+	}
 	if Config.DownloadRates {
 		fmt.Printf("Initial currency update started..\n")
 		stockRate()

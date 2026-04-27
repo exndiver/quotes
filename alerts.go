@@ -1,0 +1,322 @@
+package main
+
+import (
+	"context"
+	"errors"
+	"fmt"
+	"strings"
+	"time"
+
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
+)
+
+const (
+	alertsDBName           = "Quotes"
+	devicesCollectionName  = "devices"
+	alertsCollectionName   = "alerts"
+	AlertTypeThreshold     = "threshold"
+	AlertTypeSchedule      = "schedule"
+	AlertStatusActive      = "active"
+	AlertStatusTriggered   = "triggered"
+	AlertDirectionUp       = "up"
+	AlertDirectionDown     = "down"
+	AlertScheduleOnce      = "once"
+	AlertScheduleRecurring = "recurring"
+	DevicePlatformIOS      = "ios"
+	DevicePlatformAndroid  = "android"
+)
+
+var (
+	ErrInvalidDevice = errors.New("invalid device")
+	ErrInvalidAlert  = errors.New("invalid alert")
+)
+
+// Device is a push notification receiver. Mongo _id is the client device_id.
+type Device struct {
+	ID         string    `bson:"_id,omitempty" json:"device_id"`
+	PushToken  string    `bson:"push_token" json:"push_token"`
+	Platform   string    `bson:"platform" json:"platform"`
+	IsActive   bool      `bson:"is_active" json:"is_active"`
+	CreatedAt  time.Time `bson:"created_at" json:"created_at"`
+	UpdatedAt  time.Time `bson:"updated_at" json:"updated_at"`
+	LastSeenAt time.Time `bson:"last_seen_at" json:"last_seen_at"`
+}
+
+// Alert describes one notification rule for a currency pair.
+type Alert struct {
+	ID           primitive.ObjectID `bson:"_id,omitempty" json:"id"`
+	DeviceID     string             `bson:"device_id" json:"device_id"`
+	Type         string             `bson:"type" json:"type"`
+	Base         string             `bson:"base" json:"base"`
+	Target       string             `bson:"target" json:"target"`
+	Pair         string             `bson:"pair" json:"pair"`
+	Status       string             `bson:"status" json:"status"`
+	Value        float64            `bson:"value,omitempty" json:"value,omitempty"`
+	Direction    string             `bson:"direction,omitempty" json:"direction,omitempty"`
+	ScheduleType string             `bson:"schedule_type,omitempty" json:"schedule_type,omitempty"`
+	ScheduledAt  *time.Time         `bson:"scheduled_at,omitempty" json:"scheduled_at,omitempty"`
+	IntervalDays int                `bson:"interval_days,omitempty" json:"interval_days,omitempty"`
+	LastSentAt   *time.Time         `bson:"last_sent_at,omitempty" json:"last_sent_at,omitempty"`
+	TriggeredAt  *time.Time         `bson:"triggered_at,omitempty" json:"triggered_at,omitempty"`
+	TriggerRate  float64            `bson:"trigger_rate,omitempty" json:"trigger_rate,omitempty"`
+	CreatedAt    time.Time          `bson:"created_at" json:"created_at"`
+	UpdatedAt    time.Time          `bson:"updated_at" json:"updated_at"`
+}
+
+type AlertRepository struct {
+	client *mongo.Client
+	dbName string
+}
+
+func NewAlertRepository(client *mongo.Client) *AlertRepository {
+	return &AlertRepository{
+		client: client,
+		dbName: alertsDBName,
+	}
+}
+
+func (r *AlertRepository) devices() *mongo.Collection {
+	return r.client.Database(r.dbName).Collection(devicesCollectionName)
+}
+
+func (r *AlertRepository) alerts() *mongo.Collection {
+	return r.client.Database(r.dbName).Collection(alertsCollectionName)
+}
+
+func BuildAlertPair(base, target string) string {
+	return fmt.Sprintf("%s_%s", strings.ToUpper(base), strings.ToUpper(target))
+}
+
+func (d Device) Validate() error {
+	if d.ID == "" || d.PushToken == "" {
+		return ErrInvalidDevice
+	}
+	switch d.Platform {
+	case DevicePlatformIOS, DevicePlatformAndroid:
+		return nil
+	default:
+		return ErrInvalidDevice
+	}
+}
+
+func (a *Alert) PrepareForCreate(now time.Time) error {
+	a.Base = strings.ToUpper(a.Base)
+	a.Target = strings.ToUpper(a.Target)
+	a.Pair = BuildAlertPair(a.Base, a.Target)
+
+	if a.ID.IsZero() {
+		a.ID = primitive.NewObjectID()
+	}
+	if a.Status == "" {
+		a.Status = AlertStatusActive
+	}
+	a.CreatedAt = now
+	a.UpdatedAt = now
+
+	return a.Validate()
+}
+
+func (a Alert) Validate() error {
+	if a.DeviceID == "" || a.Base == "" || a.Target == "" || a.Pair == "" {
+		return ErrInvalidAlert
+	}
+	if a.Status != AlertStatusActive && a.Status != AlertStatusTriggered {
+		return ErrInvalidAlert
+	}
+
+	switch a.Type {
+	case AlertTypeThreshold:
+		if a.Value == 0 || (a.Direction != AlertDirectionUp && a.Direction != AlertDirectionDown) {
+			return ErrInvalidAlert
+		}
+	case AlertTypeSchedule:
+		if a.ScheduleType == AlertScheduleOnce {
+			if a.ScheduledAt == nil {
+				return ErrInvalidAlert
+			}
+		} else if a.ScheduleType == AlertScheduleRecurring {
+			if a.IntervalDays <= 0 {
+				return ErrInvalidAlert
+			}
+		} else {
+			return ErrInvalidAlert
+		}
+	default:
+		return ErrInvalidAlert
+	}
+
+	return nil
+}
+
+func (r *AlertRepository) EnsureIndexes(ctx context.Context) error {
+	deviceIndexes := []mongo.IndexModel{
+		{
+			Keys: bson.D{{Key: "push_token", Value: 1}},
+		},
+	}
+	if _, err := r.devices().Indexes().CreateMany(ctx, deviceIndexes); err != nil {
+		return err
+	}
+
+	alertIndexes := []mongo.IndexModel{
+		{
+			Keys: bson.D{
+				{Key: "pair", Value: 1},
+				{Key: "status", Value: 1},
+				{Key: "type", Value: 1},
+				{Key: "direction", Value: 1},
+				{Key: "value", Value: 1},
+			},
+		},
+		{
+			Keys: bson.D{
+				{Key: "device_id", Value: 1},
+				{Key: "status", Value: 1},
+			},
+		},
+		{
+			Keys: bson.D{
+				{Key: "type", Value: 1},
+				{Key: "status", Value: 1},
+				{Key: "scheduled_at", Value: 1},
+				{Key: "last_sent_at", Value: 1},
+			},
+		},
+		{
+			Keys: bson.D{
+				{Key: "device_id", Value: 1},
+				{Key: "pair", Value: 1},
+				{Key: "value", Value: 1},
+				{Key: "type", Value: 1},
+			},
+			Options: options.Index().
+				SetUnique(true).
+				SetPartialFilterExpression(bson.M{"type": AlertTypeThreshold}),
+		},
+	}
+	_, err := r.alerts().Indexes().CreateMany(ctx, alertIndexes)
+	return err
+}
+
+// SaveDevice upserts device state on every app launch and refreshes last_seen_at.
+func (r *AlertRepository) SaveDevice(ctx context.Context, device Device) error {
+	if err := device.Validate(); err != nil {
+		return err
+	}
+
+	now := time.Now().UTC()
+	update := bson.M{
+		"$set": bson.M{
+			"push_token":   device.PushToken,
+			"platform":     device.Platform,
+			"is_active":    true,
+			"updated_at":   now,
+			"last_seen_at": now,
+		},
+		"$setOnInsert": bson.M{
+			"created_at": now,
+		},
+	}
+	opts := options.Update().SetUpsert(true)
+	_, err := r.devices().UpdateOne(ctx, bson.M{"_id": device.ID}, update, opts)
+	return err
+}
+
+func (r *AlertRepository) CreateAlert(ctx context.Context, alert Alert) (primitive.ObjectID, error) {
+	now := time.Now().UTC()
+	if err := alert.PrepareForCreate(now); err != nil {
+		return primitive.NilObjectID, err
+	}
+
+	_, err := r.alerts().InsertOne(ctx, alert)
+	if err != nil {
+		return primitive.NilObjectID, err
+	}
+	return alert.ID, nil
+}
+
+func (r *AlertRepository) GetDeviceAlerts(ctx context.Context, deviceID string, status string) ([]Alert, error) {
+	filter := bson.M{"device_id": deviceID}
+	if status != "" {
+		filter["status"] = status
+	}
+
+	cur, err := r.alerts().Find(ctx, filter)
+	if err != nil {
+		return nil, err
+	}
+	defer cur.Close(ctx)
+
+	var alerts []Alert
+	for cur.Next(ctx) {
+		var alert Alert
+		if err := cur.Decode(&alert); err != nil {
+			return nil, err
+		}
+		alerts = append(alerts, alert)
+	}
+	if err := cur.Err(); err != nil {
+		return nil, err
+	}
+	return alerts, nil
+}
+
+func (r *AlertRepository) FindTriggeredThresholdAlerts(ctx context.Context, base, target, direction string, currentRate float64) ([]Alert, error) {
+	valueFilter := bson.M{"$lte": currentRate}
+	if direction == AlertDirectionDown {
+		valueFilter = bson.M{"$gte": currentRate}
+	}
+
+	filter := bson.M{
+		"pair":      BuildAlertPair(base, target),
+		"status":    AlertStatusActive,
+		"type":      AlertTypeThreshold,
+		"direction": direction,
+		"value":     valueFilter,
+	}
+
+	cur, err := r.alerts().Find(ctx, filter)
+	if err != nil {
+		return nil, err
+	}
+	defer cur.Close(ctx)
+
+	var alerts []Alert
+	for cur.Next(ctx) {
+		var alert Alert
+		if err := cur.Decode(&alert); err != nil {
+			return nil, err
+		}
+		alerts = append(alerts, alert)
+	}
+	if err := cur.Err(); err != nil {
+		return nil, err
+	}
+	return alerts, nil
+}
+
+func (r *AlertRepository) MarkAlertTriggered(ctx context.Context, id primitive.ObjectID, triggerRate float64) (*Alert, error) {
+	now := time.Now().UTC()
+	filter := bson.M{
+		"_id":    id,
+		"status": AlertStatusActive,
+	}
+	update := bson.M{
+		"$set": bson.M{
+			"status":       AlertStatusTriggered,
+			"triggered_at": now,
+			"trigger_rate": triggerRate,
+			"updated_at":   now,
+		},
+	}
+	opts := options.FindOneAndUpdate().SetReturnDocument(options.After)
+
+	var alert Alert
+	if err := r.alerts().FindOneAndUpdate(ctx, filter, update, opts).Decode(&alert); err != nil {
+		return nil, err
+	}
+	return &alert, nil
+}
