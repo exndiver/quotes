@@ -156,6 +156,10 @@ func main() {
 		FuelOrchestrator.StartPeriodicUpdates(context.Background())
 	}
 
+	if err := StartAlertWorkers(context.Background()); err != nil {
+		fmt.Printf("Alert workers not started: %v\n", err)
+	}
+
 	go reloadCurrenciesInMemoryAsync()
 
 	r := mux.NewRouter().StrictSlash(true)

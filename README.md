@@ -16,9 +16,21 @@ Config defaults:
 ```json
 {
   "alerts_active_limit": 100,
-  "rate_min_step": 0.01
+  "rate_min_step": 0.01,
+  "alerts_workers": {
+    "enabled": true,
+    "schedule_interval": "5m",
+    "threshold_interval": "30s",
+    "schedule_batch_size": 50,
+    "threshold_batch_size": 100
+  },
+  "firebase": {
+    "credentials_file": ""
+  }
 }
 ```
+
+Set `firebase.credentials_file` to a mounted Firebase service account JSON file, for example `config/firebase-service-account.json`, to start alert workers.
 
 `current_rate` is calculated as `target_rate / base_rate` for currency category `0`. For the same `base` and `target`, the rate is `1`.
 
@@ -148,3 +160,32 @@ Schedule update examples:
 The alert is deleted only when it belongs to the provided `device_id`.
 
 All alert endpoints also have `/api/...` aliases for the existing router style.
+
+### Alert Workers
+
+The service starts two independent workers when `alerts_workers.enabled` is `true` and Firebase credentials are configured.
+
+Schedule worker:
+
+```json
+{
+  "type": "schedule",
+  "status": "active",
+  "next_run_at": { "$lte": "now" }
+}
+```
+
+Each due schedule alert is claimed with an atomic `findOneAndUpdate`. `once` alerts are marked `triggered`; `weekly` alerts get a recalculated `next_run_at` using their `timezone`.
+
+Threshold worker:
+
+```json
+{
+  "type": "threshold",
+  "status": "active"
+}
+```
+
+The worker recalculates the current rate server-side and triggers only when `up` means `current >= value` or `down` means `current <= value`. Triggering is atomic on `{ _id, type: "threshold", status: "active" }`.
+
+Pushes are sent through Firebase Cloud Messaging. If Firebase reports an unregistered or invalid token, the device is marked inactive.

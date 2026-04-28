@@ -27,8 +27,10 @@ type Conf struct {
 	LogLoadRatesInfo    bool
 	Stocks              map[string]StockProps
 	MinLogLevel         int
-	AlertsActiveLimit   int     `json:"alerts_active_limit"`
-	RateMinStep         float64 `json:"rate_min_step"`
+	AlertsActiveLimit   int           `json:"alerts_active_limit"`
+	RateMinStep         float64       `json:"rate_min_step"`
+	AlertsWorkers       AlertsWorkers `json:"alerts_workers"`
+	Firebase            Firebase      `json:"firebase"`
 }
 
 // Feedback - config for feedback
@@ -69,6 +71,18 @@ type StockProps struct {
 	Currency string
 }
 
+type AlertsWorkers struct {
+	Enabled            bool   `json:"enabled"`
+	ScheduleInterval   string `json:"schedule_interval"`
+	ThresholdInterval  string `json:"threshold_interval"`
+	ScheduleBatchSize  int    `json:"schedule_batch_size"`
+	ThresholdBatchSize int    `json:"threshold_batch_size"`
+}
+
+type Firebase struct {
+	CredentialsFile string `json:"credentials_file"`
+}
+
 func defaultConfig() Conf {
 	var Config Conf
 	Config.Hosts.Mongodb = "mongodb://mongo:27017"
@@ -82,6 +96,11 @@ func defaultConfig() Conf {
 	Config.MinLogLevel = 6
 	Config.AlertsActiveLimit = 100
 	Config.RateMinStep = 0.01
+	Config.AlertsWorkers.Enabled = true
+	Config.AlertsWorkers.ScheduleInterval = "5m"
+	Config.AlertsWorkers.ThresholdInterval = "30s"
+	Config.AlertsWorkers.ScheduleBatchSize = 50
+	Config.AlertsWorkers.ThresholdBatchSize = 100
 	return Config
 }
 

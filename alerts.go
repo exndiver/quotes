@@ -272,6 +272,12 @@ func (r *AlertRepository) EnsureIndexes(ctx context.Context) error {
 		},
 		{
 			Keys: bson.D{
+				{Key: "type", Value: 1},
+				{Key: "status", Value: 1},
+			},
+		},
+		{
+			Keys: bson.D{
 				{Key: "device_id", Value: 1},
 				{Key: "pair", Value: 1},
 				{Key: "value", Value: 1},
@@ -283,6 +289,29 @@ func (r *AlertRepository) EnsureIndexes(ctx context.Context) error {
 		},
 	}
 	_, err := r.alerts().Indexes().CreateMany(ctx, alertIndexes)
+	return err
+}
+
+func (r *AlertRepository) GetDevice(ctx context.Context, deviceID string) (*Device, error) {
+	var device Device
+	err := r.devices().FindOne(ctx, bson.M{
+		"_id":       deviceID,
+		"is_active": true,
+	}).Decode(&device)
+	if err != nil {
+		return nil, err
+	}
+	return &device, nil
+}
+
+func (r *AlertRepository) DeactivateDevice(ctx context.Context, deviceID string) error {
+	now := time.Now().UTC()
+	_, err := r.devices().UpdateOne(ctx, bson.M{"_id": deviceID}, bson.M{
+		"$set": bson.M{
+			"is_active":  false,
+			"updated_at": now,
+		},
+	})
 	return err
 }
 
@@ -349,6 +378,18 @@ func (r *AlertRepository) GetDeviceAlerts(ctx context.Context, deviceID string, 
 	return alerts, nil
 }
 
+func (r *AlertRepository) GetAlert(ctx context.Context, id primitive.ObjectID, deviceID string) (*Alert, error) {
+	var alert Alert
+	err := r.alerts().FindOne(ctx, bson.M{
+		"_id":       id,
+		"device_id": deviceID,
+	}).Decode(&alert)
+	if err != nil {
+		return nil, err
+	}
+	return &alert, nil
+}
+
 func (r *AlertRepository) CountActiveAlerts(ctx context.Context, deviceID string) (int64, error) {
 	return r.alerts().CountDocuments(ctx, bson.M{
 		"device_id": deviceID,
@@ -368,6 +409,100 @@ func (r *AlertRepository) DeleteAlert(ctx context.Context, id primitive.ObjectID
 		return ErrAlertNotFound
 	}
 	return nil
+}
+
+func (r *AlertRepository) FindDueScheduleAlerts(ctx context.Context, now time.Time, limit int64) ([]Alert, error) {
+	opts := options.Find().
+		SetLimit(limit).
+		SetSort(bson.D{{Key: "next_run_at", Value: 1}})
+	cur, err := r.alerts().Find(ctx, bson.M{
+		"type":        AlertTypeSchedule,
+		"status":      AlertStatusActive,
+		"next_run_at": bson.M{"$lte": now},
+	}, opts)
+	if err != nil {
+		return nil, err
+	}
+	defer cur.Close(ctx)
+
+	var alerts []Alert
+	for cur.Next(ctx) {
+		var alert Alert
+		if err := cur.Decode(&alert); err != nil {
+			return nil, err
+		}
+		alerts = append(alerts, alert)
+	}
+	if err := cur.Err(); err != nil {
+		return nil, err
+	}
+	return alerts, nil
+}
+
+func (r *AlertRepository) ClaimScheduleAlert(ctx context.Context, alert Alert, now time.Time) (*Alert, error) {
+	filter := bson.M{
+		"_id":         alert.ID,
+		"type":        AlertTypeSchedule,
+		"status":      AlertStatusActive,
+		"next_run_at": bson.M{"$lte": now},
+	}
+
+	set := bson.M{
+		"updated_at": now,
+	}
+	if alert.ScheduleType == AlertScheduleOnce {
+		set["status"] = AlertStatusTriggered
+		set["triggered_at"] = now
+	} else {
+		nextRunAt, err := CalculateNextRunAt(alert.ScheduleType, alert.ScheduledAt, alert.DaysOfWeek, alert.Hour, alert.Timezone, now)
+		if err != nil {
+			return nil, err
+		}
+		set["next_run_at"] = nextRunAt
+	}
+
+	opts := options.FindOneAndUpdate().SetReturnDocument(options.After)
+	var claimed Alert
+	err := r.alerts().FindOneAndUpdate(ctx, filter, bson.M{"$set": set}, opts).Decode(&claimed)
+	if err != nil {
+		return nil, err
+	}
+	return &claimed, nil
+}
+
+func (r *AlertRepository) MarkAlertSent(ctx context.Context, id primitive.ObjectID, sentAt time.Time) error {
+	_, err := r.alerts().UpdateOne(ctx, bson.M{"_id": id}, bson.M{
+		"$set": bson.M{
+			"last_sent_at": sentAt,
+			"updated_at":   sentAt,
+		},
+	})
+	return err
+}
+
+func (r *AlertRepository) GetActiveThresholdAlerts(ctx context.Context, limit int64) ([]Alert, error) {
+	opts := options.Find().SetLimit(limit)
+	cur, err := r.alerts().Find(ctx, bson.M{
+		"type":   AlertTypeThreshold,
+		"status": AlertStatusActive,
+	}, opts)
+	if err != nil {
+		return nil, err
+	}
+	defer cur.Close(ctx)
+
+	var alerts []Alert
+	for cur.Next(ctx) {
+		var alert Alert
+		if err := cur.Decode(&alert); err != nil {
+			return nil, err
+		}
+		alerts = append(alerts, alert)
+	}
+	if err := cur.Err(); err != nil {
+		return nil, err
+	}
+	return alerts, nil
 }
 
 func (r *AlertRepository) UpdateThresholdAlert(ctx context.Context, id primitive.ObjectID, deviceID, base, target string, value float64, direction string) (*Alert, error) {
@@ -484,6 +619,7 @@ func (r *AlertRepository) MarkAlertTriggered(ctx context.Context, id primitive.O
 	now := time.Now().UTC()
 	filter := bson.M{
 		"_id":    id,
+		"type":   AlertTypeThreshold,
 		"status": AlertStatusActive,
 	}
 	update := bson.M{

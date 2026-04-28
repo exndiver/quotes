@@ -302,18 +302,33 @@ func updateAlertAPI(w http.ResponseWriter, r *http.Request) (int, string, int, s
 	}
 
 	if req.ScheduleType != "" {
-		nextRunAt, err := CalculateNextRunAt(req.ScheduleType, req.ScheduledAt, req.DaysOfWeek, req.Hour, req.Timezone, time.Now().UTC())
+		repo := NewAlertRepository(client)
+		timezone := req.Timezone
+		if timezone == "" {
+			currentAlert, err := repo.GetAlert(context.Background(), id, req.DeviceID)
+			if err != nil {
+				code = http.StatusNotFound
+				resp := writeAlertAPIError(w, code, "ALERT_NOT_FOUND")
+				return code, mn, 4, string(resp), rbody
+			}
+			timezone = currentAlert.Timezone
+		}
+		if timezone == "" {
+			timezone = "UTC"
+		}
+
+		nextRunAt, err := CalculateNextRunAt(req.ScheduleType, req.ScheduledAt, req.DaysOfWeek, req.Hour, timezone, time.Now().UTC())
 		if err != nil {
 			code = http.StatusBadRequest
 			resp := writeAlertAPIError(w, code, "INVALID_SCHEDULE")
 			return code, mn, 4, string(resp), rbody
 		}
-		alert, err := NewAlertRepository(client).UpdateScheduleAlert(context.Background(), id, req.DeviceID, Alert{
+		alert, err := repo.UpdateScheduleAlert(context.Background(), id, req.DeviceID, Alert{
 			ScheduleType: req.ScheduleType,
 			ScheduledAt:  req.ScheduledAt,
 			DaysOfWeek:   req.DaysOfWeek,
 			Hour:         req.Hour,
-			Timezone:     req.Timezone,
+			Timezone:     timezone,
 			NextRunAt:    nextRunAt,
 		})
 		if err != nil {
