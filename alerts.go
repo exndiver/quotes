@@ -104,22 +104,39 @@ func CalculateCurrentRate(base, target string) (float64, error) {
 		return 0, ErrRateNotFound
 	}
 	if base == target {
-		if _, ok := getRateFromDB(base, 0); !ok {
+		if _, ok := getRateAnyCategory(base); !ok {
 			return 0, ErrRateNotFound
 		}
 		return 1, nil
 	}
 
-	baseRate, ok := getRateFromDB(base, 0)
+	baseRate, ok := getRateAnyCategory(base)
 	if !ok || baseRate == 0 {
 		return 0, ErrRateNotFound
 	}
-	targetRate, ok := getRateFromDB(target, 0)
+	targetRate, ok := getRateAnyCategory(target)
 	if !ok {
 		return 0, ErrRateNotFound
 	}
 
 	return math.Round((targetRate/baseRate)*10000000000) / 10000000000, nil
+}
+
+// getRateAnyCategory tries to find a symbol rate across all configured categories.
+// Category mapping is derived from Config.AvialibleTypes order.
+func getRateAnyCategory(symbol string) (rate float64, ok bool) {
+	types := strings.Split(Config.AvialibleTypes, ",")
+	if len(types) == 0 {
+		types = []string{"Currencies"}
+	}
+
+	for category := range types {
+		r, found := getRateFromDB(symbol, category)
+		if found {
+			return r, true
+		}
+	}
+	return 0, false
 }
 
 func CalculateNextRunAt(scheduleType string, scheduledAt *time.Time, daysOfWeek []int, hour *int, timezone string, now time.Time) (*time.Time, error) {
