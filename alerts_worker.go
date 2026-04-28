@@ -196,15 +196,24 @@ func isThresholdTriggered(alert Alert, currentRate float64) bool {
 }
 
 func buildSchedulePushMessage(alert Alert) (string, string) {
-	title := fmt.Sprintf("%s/%s rate reminder", alert.Base, alert.Target)
+	pair := fmt.Sprintf("%s/%s", alert.Base, alert.Target)
 	rate, err := CalculateCurrentRate(alert.Base, alert.Target)
 	if err != nil {
-		return title, "Your scheduled rate reminder is due."
+		if alert.ScheduleType == AlertScheduleOnce {
+			return "Quick update ⚡", fmt.Sprintf("%s right now: N/A", pair)
+		}
+		return "Staying updated 👀", fmt.Sprintf("%s is N/A", pair)
 	}
-	return title, fmt.Sprintf("Current %s/%s rate is %.4f", alert.Base, alert.Target, rate)
+	if alert.ScheduleType == AlertScheduleOnce {
+		return "Quick update ⚡", fmt.Sprintf("%s right now: %.2f", pair, rate)
+	}
+	return "Staying updated 👀", fmt.Sprintf("%s is %.2f", pair, rate)
 }
 
 func buildThresholdPushMessage(alert Alert, currentRate float64) (string, string) {
-	title := fmt.Sprintf("%s/%s alert triggered", alert.Base, alert.Target)
-	return title, fmt.Sprintf("Current rate %.4f reached your %.4f target.", currentRate, alert.Value)
+	pair := fmt.Sprintf("%s/%s", alert.Base, alert.Target)
+	if alert.Direction == AlertDirectionDown {
+		return "Target hit 🎯", fmt.Sprintf("%s dropped to %.2f", pair, currentRate)
+	}
+	return "Target hit 🎯", fmt.Sprintf("%s climbed to %.2f", pair, currentRate)
 }
