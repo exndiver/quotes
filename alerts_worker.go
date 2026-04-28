@@ -20,7 +20,7 @@ type AlertWorker struct {
 
 func StartAlertWorkers(ctx context.Context) error {
 	if !Config.AlertsWorkers.Enabled {
-		fmt.Printf("Alert workers are disabled\n")
+		alertsWorkerLog().Printf("workers are disabled")
 		return nil
 	}
 
@@ -41,7 +41,12 @@ func StartAlertWorkers(ctx context.Context) error {
 
 	go worker.scheduleLoop(ctx)
 	go worker.thresholdLoop(ctx)
-	fmt.Printf("Alert workers started: schedule=%s threshold=%s\n", worker.scheduleInterval, worker.thresholdInterval)
+	alertsWorkerLog().Printf("workers started schedule=%s threshold=%s batch schedule=%d threshold=%d",
+		worker.scheduleInterval,
+		worker.thresholdInterval,
+		worker.scheduleBatchSize,
+		worker.thresholdBatchSize,
+	)
 	return nil
 }
 
@@ -97,7 +102,7 @@ func (w *AlertWorker) runSchedule(ctx context.Context) {
 	now := time.Now().UTC()
 	alerts, err := w.repo.FindDueScheduleAlerts(ctx, now, w.scheduleBatchSize)
 	if err != nil {
-		fmt.Printf("Schedule worker find failed: %v\n", err)
+		alertsWorkerLog().Printf("schedule find failed: %v", err)
 		return
 	}
 
@@ -107,18 +112,26 @@ func (w *AlertWorker) runSchedule(ctx context.Context) {
 			if errors.Is(err, mongo.ErrNoDocuments) {
 				continue
 			}
-			fmt.Printf("Schedule worker claim failed: %v\n", err)
+			alertsWorkerLog().Printf("schedule claim failed alert=%s device=%s err=%v", dueAlert.ID.Hex(), dueAlert.DeviceID, err)
 			continue
 		}
+
+		alertsWorkerLog().Printf("schedule claimed alert=%s device=%s schedule_type=%s next_run_at=%v",
+			claimedAlert.ID.Hex(),
+			claimedAlert.DeviceID,
+			claimedAlert.ScheduleType,
+			claimedAlert.NextRunAt,
+		)
 
 		title, body := buildSchedulePushMessage(*claimedAlert)
 		if err := w.sender.SendPush(ctx, claimedAlert.DeviceID, title, body); err != nil {
-			fmt.Printf("Schedule push failed for alert %s: %v\n", claimedAlert.ID.Hex(), err)
+			alertsWorkerLog().Printf("schedule push failed alert=%s device=%s err=%v", claimedAlert.ID.Hex(), claimedAlert.DeviceID, err)
 			continue
 		}
+		alertsWorkerLog().Printf("schedule push sent alert=%s device=%s", claimedAlert.ID.Hex(), claimedAlert.DeviceID)
 
 		if err := w.repo.MarkAlertSent(ctx, claimedAlert.ID, time.Now().UTC()); err != nil {
-			fmt.Printf("Schedule worker mark sent failed for alert %s: %v\n", claimedAlert.ID.Hex(), err)
+			alertsWorkerLog().Printf("schedule mark sent failed alert=%s device=%s err=%v", claimedAlert.ID.Hex(), claimedAlert.DeviceID, err)
 		}
 	}
 }
@@ -126,14 +139,14 @@ func (w *AlertWorker) runSchedule(ctx context.Context) {
 func (w *AlertWorker) runThreshold(ctx context.Context) {
 	alerts, err := w.repo.GetActiveThresholdAlerts(ctx, w.thresholdBatchSize)
 	if err != nil {
-		fmt.Printf("Threshold worker find failed: %v\n", err)
+		alertsWorkerLog().Printf("threshold find failed: %v", err)
 		return
 	}
 
 	for _, alert := range alerts {
 		currentRate, err := CalculateCurrentRate(alert.Base, alert.Target)
 		if err != nil {
-			fmt.Printf("Threshold worker rate failed for alert %s: %v\n", alert.ID.Hex(), err)
+			alertsWorkerLog().Printf("threshold rate failed alert=%s device=%s pair=%s err=%v", alert.ID.Hex(), alert.DeviceID, alert.Pair, err)
 			continue
 		}
 		if !isThresholdTriggered(alert, currentRate) {
@@ -145,18 +158,28 @@ func (w *AlertWorker) runThreshold(ctx context.Context) {
 			if errors.Is(err, mongo.ErrNoDocuments) {
 				continue
 			}
-			fmt.Printf("Threshold worker trigger failed: %v\n", err)
+			alertsWorkerLog().Printf("threshold trigger update failed alert=%s device=%s err=%v", alert.ID.Hex(), alert.DeviceID, err)
 			continue
 		}
+
+		alertsWorkerLog().Printf("threshold triggered alert=%s device=%s pair=%s value=%.6f current=%.6f direction=%s",
+			triggeredAlert.ID.Hex(),
+			triggeredAlert.DeviceID,
+			triggeredAlert.Pair,
+			triggeredAlert.Value,
+			currentRate,
+			triggeredAlert.Direction,
+		)
 
 		title, body := buildThresholdPushMessage(*triggeredAlert, currentRate)
 		if err := w.sender.SendPush(ctx, triggeredAlert.DeviceID, title, body); err != nil {
-			fmt.Printf("Threshold push failed for alert %s: %v\n", triggeredAlert.ID.Hex(), err)
+			alertsWorkerLog().Printf("threshold push failed alert=%s device=%s err=%v", triggeredAlert.ID.Hex(), triggeredAlert.DeviceID, err)
 			continue
 		}
+		alertsWorkerLog().Printf("threshold push sent alert=%s device=%s", triggeredAlert.ID.Hex(), triggeredAlert.DeviceID)
 
 		if err := w.repo.MarkAlertSent(ctx, triggeredAlert.ID, time.Now().UTC()); err != nil {
-			fmt.Printf("Threshold worker mark sent failed for alert %s: %v\n", triggeredAlert.ID.Hex(), err)
+			alertsWorkerLog().Printf("threshold mark sent failed alert=%s device=%s err=%v", triggeredAlert.ID.Hex(), triggeredAlert.DeviceID, err)
 		}
 	}
 }

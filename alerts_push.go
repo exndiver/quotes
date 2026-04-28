@@ -41,6 +41,7 @@ func NewFirebasePushSender(ctx context.Context, repo *AlertRepository, credentia
 func (s *FirebasePushSender) SendPush(ctx context.Context, deviceID, title, body string) error {
 	device, err := s.repo.GetDevice(ctx, deviceID)
 	if err != nil {
+		alertsWorkerLog().Printf("push: device lookup failed device=%s err=%v", deviceID, err)
 		return err
 	}
 
@@ -55,10 +56,13 @@ func (s *FirebasePushSender) SendPush(ctx context.Context, deviceID, title, body
 	_, err = s.client.Send(ctx, message)
 	if err != nil {
 		if messaging.IsUnregistered(err) || messaging.IsInvalidArgument(err) {
+			alertsWorkerLog().Printf("push: deactivating device=%s due to token error: %v", deviceID, err)
 			_ = s.repo.DeactivateDevice(ctx, deviceID)
 		}
+		alertsWorkerLog().Printf("push: send failed device=%s err=%v", deviceID, err)
 		return err
 	}
 
+	alertsWorkerLog().Printf("push: send ok device=%s", deviceID)
 	return nil
 }
