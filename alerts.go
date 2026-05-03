@@ -139,6 +139,37 @@ func getRateAnyCategory(symbol string) (rate float64, ok bool) {
 	return 0, false
 }
 
+func cryptoCategoryIndex() int {
+	for i, name := range strings.Split(Config.AvialibleTypes, ",") {
+		if strings.EqualFold(strings.TrimSpace(name), "Cryptocurrencies") {
+			return i
+		}
+	}
+	return 1
+}
+
+// alertPairInvolvesCrypto true, если base или target есть в БД в категории Cryptocurrencies.
+func alertPairInvolvesCrypto(base, target string) bool {
+	cat := cryptoCategoryIndex()
+	base = strings.ToUpper(strings.TrimSpace(base))
+	target = strings.ToUpper(strings.TrimSpace(target))
+	if _, ok := getRateFromDB(base, cat); ok {
+		return true
+	}
+	if _, ok := getRateFromDB(target, cat); ok {
+		return true
+	}
+	return false
+}
+
+// formatAlertRateForPush форматирует курс в тексте push: для пар с криптой — 5 знаков, иначе — 2.
+func formatAlertRateForPush(base, target string, rate float64) string {
+	if alertPairInvolvesCrypto(base, target) {
+		return fmt.Sprintf("%.5f", rate)
+	}
+	return fmt.Sprintf("%.2f", rate)
+}
+
 func CalculateNextRunAt(scheduleType string, scheduledAt *time.Time, daysOfWeek []int, hour *int, timezone string, now time.Time) (*time.Time, error) {
 	if timezone == "" {
 		return nil, ErrInvalidAlert

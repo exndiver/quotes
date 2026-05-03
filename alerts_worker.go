@@ -205,15 +205,15 @@ func buildSchedulePushMessage(alert Alert) (string, string) {
 		return "Staying updated 👀", fmt.Sprintf("%s is N/A", pair)
 	}
 	if alert.ScheduleType == AlertScheduleOnce {
-		return "Quick update ⚡", fmt.Sprintf("%s right now: %.2f", pair, rate)
+		return "Quick update ⚡", fmt.Sprintf("%s right now: %s", pair, formatAlertRateForPush(alert.Base, alert.Target, rate))
 	}
-	return "Staying updated 👀", fmt.Sprintf("%s is %.2f", pair, rate)
+	return "Staying updated 👀", fmt.Sprintf("%s is %s", pair, formatAlertRateForPush(alert.Base, alert.Target, rate))
 }
 
 func buildThresholdPushMessage(alert Alert, currentRate float64) (string, string) {
 	pair := fmt.Sprintf("%s/%s", alert.Base, alert.Target)
 	if alert.Direction == AlertDirectionDown {
-		return "Target hit 🎯", fmt.Sprintf("%s dropped to %.2f", pair, currentRate)
+		return "Target hit 🎯", fmt.Sprintf("%s dropped to %s", pair, formatAlertRateForPush(alert.Base, alert.Target, currentRate))
 	}
-	return "Target hit 🎯", fmt.Sprintf("%s climbed to %.2f", pair, currentRate)
+	return "Target hit 🎯", fmt.Sprintf("%s climbed to %s", pair, formatAlertRateForPush(alert.Base, alert.Target, currentRate))
 }
