@@ -2,6 +2,8 @@ package main
 
 import (
 	"context"
+	"fmt"
+	"strings"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -9,12 +11,23 @@ import (
 )
 
 func historyDBUpdate() {
-	historyInsert("h")
-	historyInsert("d")
+	statusRecordAttempt("history")
+	var errs []string
+	if err := historyInsert("h"); err != nil {
+		errs = append(errs, "hourly: "+err.Error())
+	}
+	if err := historyInsert("d"); err != nil {
+		errs = append(errs, "daily: "+err.Error())
+	}
+	if len(errs) > 0 {
+		statusRecordFailure("history", fmt.Errorf(strings.Join(errs, "; ")))
+		return
+	}
+	statusRecordSuccess("history", "hourly and daily snapshots saved")
 }
 
 // Insert or update history record; p - period (d - day, h  hour)
-func historyInsert(p string) {
+func historyInsert(p string) error {
 	// Collection name based on period p
 	var c string
 	start := time.Now()
@@ -23,7 +36,7 @@ func historyInsert(p string) {
 	if errPing != nil {
 		client = dbConnect()
 		logError("historyInsert - DB connection is lost! : "+p, errPing.Error(), 3)
-		return
+		return fmt.Errorf("db ping: %w", errPing)
 	}
 	removeHistoryDate(p)
 	switch p {
@@ -38,9 +51,11 @@ func historyInsert(p string) {
 	_, err := collection.InsertMany(context.TODO(), h)
 	if err != nil {
 		logError("DB problem! : "+p, err.Error(), 2)
+		return fmt.Errorf("insert %s: %w", p, err)
 	}
 	elapsed := int64(time.Since(start) / time.Millisecond)
 	logEvent(7, "historyInsert", 200, "History inserted "+p, elapsed)
+	return nil
 }
 
 func removeHistoryDate(p string) {

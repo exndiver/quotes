@@ -35,15 +35,19 @@ func dbConnect() *mongo.Client {
 }
 
 func getAllElementsinMemory() {
+	statusRecordAttempt("memory_reload")
 	errPing := client.Ping(context.TODO(), nil)
 	if errPing != nil {
 		client = dbConnect()
 		logError("getAllElementsinMemory - DB connection is lost!", errPing.Error(), 3)
+		statusRecordFailure("memory_reload", errPing)
+		return
 	}
 	collection := client.Database("Quotes").Collection("Currencies")
 	cur, err := collection.Find(context.TODO(), bson.D{})
 	if err != nil {
 		logError("DB problem!", err.Error(), 2)
+		statusRecordFailure("memory_reload", err)
 		log.Fatalf("DB problem!")
 	}
 	for cur.Next(context.TODO()) {
@@ -67,10 +71,12 @@ func getAllElementsinMemory() {
 	}
 	if err := cur.Err(); err != nil {
 		logError("DB problem!", err.Error(), 2)
+		statusRecordFailure("memory_reload", err)
 		log.Fatalf("DB problem!")
 	}
 
 	cur.Close(context.TODO())
+	statusRecordSuccess("memory_reload", fmt.Sprintf("loaded %d quotes into memory", len(QutesinMemory)))
 }
 
 // getRateFromDB возвращает Rate для пары symbol+category (например USD, 0). ok=false если не найден.

@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"quotes/fuel"
@@ -60,12 +61,14 @@ func currencyHourTimer() {
 	nextTime = nextTime.Add(time.Hour * d)
 
 	if (day == 0) || (day == 6) {
-		logEvent(7, "CurrenciesUpdate", 400, "Skip update. It is weekend: day "+strconv.Itoa(day), 0)
-	} else {
-		// Check plugins and Update
-
+		msg := "Skip update. It is weekend: day " + strconv.Itoa(day)
+		logEvent(7, "CurrenciesUpdate", 400, msg, 0)
 		if Config.Plugins.OpenExRates {
-			openexchangerates()
+			statusRecordSkip("openexchangerates", msg)
+		}
+	} else {
+		if Config.Plugins.OpenExRates {
+			_ = openexchangerates()
 		}
 		logEvent(7, "CurrenciesUpdate", 400, "Currencies updated "+strconv.Itoa(day), 0)
 	}
@@ -84,7 +87,7 @@ func reloadCurrenciesInMemoryAsync() {
 
 func updateQuotesCryptocurrenciesInDB() {
 	if Config.Plugins.Crypto {
-		getCryptoCoinGecko()
+		_ = getCryptoCoinGecko()
 	}
 
 	nextTime := time.Now().Truncate(time.Minute * 5)
@@ -94,7 +97,7 @@ func updateQuotesCryptocurrenciesInDB() {
 }
 
 func updateStocks() {
-	stockRate()
+	_ = stockRate()
 	nextTime := time.Now().Truncate(time.Minute * 5)
 	nextTime = nextTime.Add(time.Minute * 5)
 	time.Sleep(time.Until(nextTime))
@@ -111,12 +114,12 @@ func serverPrep() {
 	}
 	if Config.DownloadRates {
 		fmt.Printf("Initial currency update started..\n")
-		stockRate()
+		_ = stockRate()
 		if Config.Plugins.OpenExRates {
-			openexchangerates()
+			_ = openexchangerates()
 		}
 		if Config.Plugins.Crypto {
-			getCryptoCoinGecko()
+			_ = getCryptoCoinGecko()
 		}
 		fmt.Printf("Currencies updated\n")
 	}
@@ -130,6 +133,7 @@ func serverPrep() {
 		fmt.Printf("Initial fuel price update started (background)..\n")
 		go func() {
 			FuelOrchestrator.Run(context.Background())
+			reportFuelStatus()
 			fmt.Printf("Fuel prices updated\n")
 		}()
 	}
@@ -153,7 +157,7 @@ func main() {
 	}
 
 	if FuelOrchestrator != nil {
-		FuelOrchestrator.StartPeriodicUpdates(context.Background())
+		FuelOrchestrator.StartPeriodicUpdates(context.Background(), reportFuelStatus)
 	}
 
 	if err := StartAlertWorkers(context.Background()); err != nil {
@@ -165,6 +169,8 @@ func main() {
 	r := mux.NewRouter().StrictSlash(true)
 
 	r.Handle("/", logger(DefaultPage)).Methods("GET")
+	r.HandleFunc("/status", statusHTTP).Methods("GET", "HEAD")
+	r.HandleFunc("/api/status", statusHTTP).Methods("GET", "HEAD")
 
 	r.Handle("/api/GetAvialibleCurrencies/", logger(avialibleCurrencies)).Methods("GET")
 
@@ -202,6 +208,19 @@ func main() {
 	fmt.Printf("Starting server...\n")
 
 	log.Print(http.ListenAndServe(Config.Hosts.Service, handlers.CORS(handlers.AllowedOrigins([]string{"*"}))(r)))
+}
+
+func reportFuelStatus() {
+	if FuelOrchestrator == nil {
+		return
+	}
+	statusRecordAttempt("fuel")
+	failures := FuelOrchestrator.LastRunFailures()
+	if len(failures) > 0 {
+		statusRecordFailure("fuel", fmt.Errorf("%s", strings.Join(failures, "; ")))
+		return
+	}
+	statusRecordSuccess("fuel", FuelOrchestrator.LastRunMessage())
 }
 
 func logger(endpoint func(http.ResponseWriter, *http.Request) (int, string, int, string, string)) http.Handler {

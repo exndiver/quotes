@@ -2,8 +2,10 @@ package fuel
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"quotes/fuel/sources"
+	"sync"
 	"time"
 
 	"go.mongodb.org/mongo-driver/mongo"
@@ -14,13 +16,24 @@ type Orchestrator struct {
 	config  *FuelConfig
 	db      *DB
 	sources map[string]sources.Source
+
+	runMu           sync.RWMutex
+	lastRunAt       time.Time
+	lastRunFailures []string
+	lastRunMessage  string
+	updateInterval  time.Duration
 }
 
 func NewOrchestrator(config *FuelConfig, client *mongo.Client, dbName string) *Orchestrator {
+	interval, err := time.ParseDuration(config.UpdateInterval)
+	if err != nil || interval <= 0 {
+		interval = 24 * time.Hour
+	}
 	orc := &Orchestrator{
-		config:  config,
-		db:      NewDB(client, dbName),
-		sources: make(map[string]sources.Source),
+		config:         config,
+		db:             NewDB(client, dbName),
+		sources:        make(map[string]sources.Source),
+		updateInterval: interval,
 	}
 
 	// Register sources
@@ -40,8 +53,54 @@ func (o *Orchestrator) RegisterSource(s sources.Source) {
 	o.sources[s.Name()] = s
 }
 
+// MaxStaleAfter returns how long after last success the fuel module is considered stale.
+func (o *Orchestrator) MaxStaleAfter() time.Duration {
+	return o.updateInterval * 2
+}
+
+// LastRunFailures returns errors from the most recent Run.
+func (o *Orchestrator) LastRunFailures() []string {
+	o.runMu.RLock()
+	defer o.runMu.RUnlock()
+	out := make([]string, len(o.lastRunFailures))
+	copy(out, o.lastRunFailures)
+	return out
+}
+
+// LastRunMessage returns a short summary of the most recent Run.
+func (o *Orchestrator) LastRunMessage() string {
+	o.runMu.RLock()
+	defer o.runMu.RUnlock()
+	return o.lastRunMessage
+}
+
+// LastRunAt returns when Run last finished.
+func (o *Orchestrator) LastRunAt() time.Time {
+	o.runMu.RLock()
+	defer o.runMu.RUnlock()
+	return o.lastRunAt
+}
+
+func (o *Orchestrator) finishRun(successes int, failures []string) {
+	o.runMu.Lock()
+	defer o.runMu.Unlock()
+	o.lastRunAt = time.Now()
+	o.lastRunFailures = failures
+	if len(failures) == 0 {
+		o.lastRunMessage = fmt.Sprintf("updated %d countries", successes)
+		return
+	}
+	o.lastRunMessage = fmt.Sprintf("updated %d countries, %d failed", successes, len(failures))
+}
+
 // Run executes the update process for all enabled countries
 func (o *Orchestrator) Run(ctx context.Context) {
+	var failures []string
+	successes := 0
+	defer func() {
+		o.finishRun(successes, failures)
+	}()
+
 	for _, country := range o.config.Countries {
 		if !country.Enabled {
 			continue
@@ -49,7 +108,9 @@ func (o *Orchestrator) Run(ctx context.Context) {
 
 		source, ok := o.sources[country.Source]
 		if !ok {
-			log.Printf("Source %s not found for country %s", country.Source, country.Name)
+			msg := fmt.Sprintf("%s: source %s not found", country.Name, country.Source)
+			log.Print(msg)
+			failures = append(failures, msg)
 			continue
 		}
 
@@ -61,7 +122,9 @@ func (o *Orchestrator) Run(ctx context.Context) {
 
 		rawPrices, err := source.FetchPrices(ctx, country.Code)
 		if err != nil {
+			msg := fmt.Sprintf("%s (%s): %v", country.Name, source.Name(), err)
 			log.Printf("Error fetching prices for %s: %v", country.Name, err)
+			failures = append(failures, msg)
 			continue
 		}
 
@@ -139,15 +202,14 @@ func (o *Orchestrator) Run(ctx context.Context) {
 				log.Printf("Error saving history for %s: %v", country.Name, err)
 			}
 		}
+		successes++
 	}
 }
 
-// StartPeriodicUpdates starts a background goroutine for periodic updates
-func (o *Orchestrator) StartPeriodicUpdates(ctx context.Context) {
-	interval, err := time.ParseDuration(o.config.UpdateInterval)
-	if err != nil {
-		interval = 24 * time.Hour
-	}
+// StartPeriodicUpdates starts a background goroutine for periodic updates.
+// onComplete is called after each Run (e.g. to refresh health status).
+func (o *Orchestrator) StartPeriodicUpdates(ctx context.Context, onComplete func()) {
+	interval := o.updateInterval
 
 	go func() {
 		log.Printf("Fuel periodic updates enabled: interval=%v", interval)
@@ -160,6 +222,9 @@ func (o *Orchestrator) StartPeriodicUpdates(ctx context.Context) {
 				start := time.Now()
 				log.Printf("Fuel periodic update started")
 				o.Run(ctx)
+				if onComplete != nil {
+					onComplete()
+				}
 				log.Printf("Fuel periodic update finished in %v", time.Since(start))
 			case <-ctx.Done():
 				return

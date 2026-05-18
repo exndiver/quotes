@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"strconv"
@@ -89,13 +90,18 @@ type coinGeckoPriceResp map[string]struct {
 // В БД хранится Rate = единиц крипты за 1 EUR (как у старого CoinAPI с базой EUR),
 // чтобы /api/GetRates/0/EUR возвращал «1 EUR = X BTC», а не «1 EUR = 72405 BTC».
 // Цена из CoinGecko в USD переводится в «крипта за 1 EUR»: rate = usdPerEur / priceUsd.
-func getCryptoCoinGecko() {
+func getCryptoCoinGecko() error {
+	statusRecordAttempt("crypto")
 	if Config.Coinapi == nil {
-		return
+		err := fmt.Errorf("coinapi config missing")
+		statusRecordFailure("crypto", err)
+		return err
 	}
 	listStr := Config.Coinapi["list"]
 	if listStr == "" {
-		return
+		err := fmt.Errorf("coin list empty")
+		statusRecordFailure("crypto", err)
+		return err
 	}
 	symbols := strings.Split(listStr, ",")
 	var ids []string
@@ -111,7 +117,9 @@ func getCryptoCoinGecko() {
 		ids = append(ids, id)
 	}
 	if len(ids) == 0 {
-		return
+		err := fmt.Errorf("no valid coin ids")
+		statusRecordFailure("crypto", err)
+		return err
 	}
 
 	idsParam := strings.Join(ids, ",")
@@ -122,23 +130,29 @@ func getCryptoCoinGecko() {
 	res, err := client.Get(url)
 	if err != nil {
 		d := int64(time.Since(start) / time.Millisecond)
-		logEvent(4, "loadCryptoCoinGecko", 500, "Request error: "+err.Error(), d)
-		return
+		err = fmt.Errorf("request error: %w", err)
+		logEvent(4, "loadCryptoCoinGecko", 500, err.Error(), d)
+		statusRecordFailure("crypto", err)
+		return err
 	}
 	defer res.Body.Close()
 
 	body, err := io.ReadAll(res.Body)
 	if err != nil {
 		d := int64(time.Since(start) / time.Millisecond)
-		logEvent(4, "loadCryptoCoinGecko", 500, "Read body: "+err.Error(), d)
-		return
+		err = fmt.Errorf("read body: %w", err)
+		logEvent(4, "loadCryptoCoinGecko", 500, err.Error(), d)
+		statusRecordFailure("crypto", err)
+		return err
 	}
 
 	var data coinGeckoPriceResp
 	if err := json.Unmarshal(body, &data); err != nil {
 		d := int64(time.Since(start) / time.Millisecond)
-		logEvent(4, "loadCryptoCoinGecko", 500, "JSON parse: "+err.Error(), d)
-		return
+		err = fmt.Errorf("json parse: %w", err)
+		logEvent(4, "loadCryptoCoinGecko", 500, err.Error(), d)
+		statusRecordFailure("crypto", err)
+		return err
 	}
 
 	// Обратная карта: coingecko id -> symbol (первый попавшийся символ для этого id)
@@ -163,8 +177,10 @@ func getCryptoCoinGecko() {
 	// Курс USD в БД = сколько USD за 1 EUR (для конвертации цены из USD в «крипта за 1 EUR»).
 	usdPerEur, hasUSD := getRateFromDB("USD", 0)
 	if !hasUSD || usdPerEur <= 0 {
-		logEvent(4, "loadCryptoCoinGecko", 500, "USD rate not found in DB (need OpenExRates or stocks), cannot convert to EUR base", 0)
-		return
+		err := fmt.Errorf("USD rate not found in DB (need OpenExRates or stocks)")
+		logEvent(4, "loadCryptoCoinGecko", 500, err.Error(), 0)
+		statusRecordFailure("crypto", err)
+		return err
 	}
 
 	saved := 0
@@ -192,7 +208,10 @@ func getCryptoCoinGecko() {
 	}
 
 	d := int64(time.Since(start) / time.Millisecond)
+	msg := "crypto updated (CoinGecko), count: " + strconv.Itoa(saved)
 	if Config.LogLoadRatesInfo {
-		logEvent(6, "loadCryptoCoinGecko", 200, "Crypto loaded successfully (CoinGecko), count: "+strconv.Itoa(saved), d)
+		logEvent(6, "loadCryptoCoinGecko", 200, msg, d)
 	}
+	statusRecordSuccess("crypto", msg)
+	return nil
 }
