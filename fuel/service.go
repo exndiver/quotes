@@ -127,6 +127,9 @@ func (o *Orchestrator) Run(ctx context.Context) {
 			failures = append(failures, msg)
 			continue
 		}
+		if len(rawPrices) == 0 {
+			continue
+		}
 
 		// Throttle: delay after each request for this source (e.g. GPP once per day spread)
 		if srcCfg, ok := o.config.Sources[country.Source]; ok && srcCfg.RequestDelaySeconds > 0 {

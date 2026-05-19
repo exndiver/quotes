@@ -19,10 +19,10 @@ var gppCountrySlug = map[string]string{
 	"AR": "Argentina", "AM": "Armenia", "AW": "Aruba", "AU": "Australia", "AT": "Austria", "AZ": "Azerbaijan",
 	"BS": "Bahamas", "BH": "Bahrain", "BD": "Bangladesh", "BB": "Barbados", "BY": "Belarus", "BE": "Belgium",
 	"BZ": "Belize", "BJ": "Benin", "BM": "Bermuda", "BT": "Bhutan", "BO": "Bolivia", "BA": "Bosnia-and-Herzegovina",
-	"BW": "Botswana", "BR": "Brazil", "BN": "Brunei", "BG": "Bulgaria", "BF": "Burkina-Faso", "MM": "Burma",
+	"BW": "Botswana", "BR": "Brazil", "BN": "Brunei", "BG": "Bulgaria", "BF": "Burkina-Faso", "MM": "Burma-Myanmar",
 	"BI": "Burundi", "KH": "Cambodia", "CM": "Cameroon", "CA": "Canada", "CV": "Cape-Verde",
 	"CF": "Central-African-Republic", "TD": "Chad", "CL": "Chile", "CN": "China", "CO": "Colombia",
-	"KM": "Comoros", "CG": "Congo", "CD": "Democratic-Republic-of-the-Congo", "CR": "Costa-Rica",
+	"KM": "Comoros", "CG": "Republic-of-the-Congo", "CD": "Democratic-Republic-of-the-Congo", "CR": "Costa-Rica",
 	"CI": "Ivory-Coast", "HR": "Croatia", "CU": "Cuba", "CW": "Curacao", "CY": "Cyprus", "CZ": "Czech-Republic",
 	"DK": "Denmark", "DJ": "Djibouti", "DM": "Dominica", "DO": "Dominican-Republic", "EC": "Ecuador",
 	"EG": "Egypt", "SV": "El-Salvador", "GQ": "Equatorial-Guinea", "ER": "Eritrea", "EE": "Estonia",
@@ -86,6 +86,9 @@ func (s *GPP) FetchPrices(ctx context.Context, countryCode string) ([]RawFuelPri
 	}
 	defer resp.Body.Close()
 
+	if resp.StatusCode == http.StatusNotFound {
+		return nil, nil
+	}
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("gpp: %s returned %s", url, resp.Status)
 	}
@@ -104,8 +107,8 @@ func (s *GPP) FetchPrices(ctx context.Context, countryCode string) ([]RawFuelPri
 		currency = strings.TrimSpace(currencyMatch[1])
 	}
 
-	// Rows: indicatorName, date, first value
-	re := regexp.MustCompile(`<a class="indicatorName"[^>]*>\s*([^<]+?)\s*</a>\s*</th>\s*<td class="value">\s*([0-9]{2}\.[0-9]{2}\.[0-9]{4})\s*</td>\s*<td class="value">\s*([0-9]+\.[0-9]+)\s*</td>`)
+	// Rows: indicatorName, date, first value (price may be integer or decimal, e.g. 63 or 1.957)
+	re := regexp.MustCompile(`<a class="indicatorName"[^>]*>\s*([^<]+?)\s*</a>\s*</th>\s*<td class="value">\s*([0-9]{2}\.[0-9]{2}\.[0-9]{4})\s*</td>\s*<td class="value">\s*([0-9]+(?:\.[0-9]+)?)\s*</td>`)
 	matches := re.FindAllStringSubmatch(html, -1)
 
 	if len(matches) == 0 {

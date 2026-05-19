@@ -216,11 +216,20 @@ func reportFuelStatus() {
 	}
 	statusRecordAttempt("fuel")
 	failures := FuelOrchestrator.LastRunFailures()
-	if len(failures) > 0 {
+	msg := FuelOrchestrator.LastRunMessage()
+	if len(failures) == 0 {
+		statusRecordSuccess("fuel", msg)
+		return
+	}
+	if strings.HasPrefix(msg, "updated 0 countries") {
 		statusRecordFailure("fuel", fmt.Errorf("%s", strings.Join(failures, "; ")))
 		return
 	}
-	statusRecordSuccess("fuel", FuelOrchestrator.LastRunMessage())
+	warn := fmt.Sprintf("%s; %d country warning(s)", msg, len(failures))
+	if len(failures) <= 3 {
+		warn += ": " + strings.Join(failures, "; ")
+	}
+	statusRecordSuccess("fuel", warn)
 }
 
 func logger(endpoint func(http.ResponseWriter, *http.Request) (int, string, int, string, string)) http.Handler {

@@ -57,7 +57,7 @@ func (s *USAGlobalPetrolPrices) FetchPrices(ctx context.Context, countryCode str
 	html := string(body)
 
 	// Same table structure as Russia: indicatorName, date, first value column (USD for USA).
-	re := regexp.MustCompile(`<a class="indicatorName"[^>]*>\s*([^<]+?)\s*</a>\s*</th>\s*<td class="value">\s*([0-9]{2}\.[0-9]{2}\.[0-9]{4})\s*</td>\s*<td class="value">\s*([0-9]+\.[0-9]+)\s*</td>`)
+	re := regexp.MustCompile(`<a class="indicatorName"[^>]*>\s*([^<]+?)\s*</a>\s*</th>\s*<td class="value">\s*([0-9]{2}\.[0-9]{2}\.[0-9]{4})\s*</td>\s*<td class="value">\s*([0-9]+(?:\.[0-9]+)?)\s*</td>`)
 	matches := re.FindAllStringSubmatch(html, -1)
 
 	if len(matches) == 0 {
